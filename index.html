@@ -113,11 +113,27 @@
   .map-table td { padding: 18px; vertical-align: top; border-bottom: 1px solid rgba(0,0,0,0.05); }
   .map-table tr:last-child td { border-bottom: none; }
   .map-annual { font-family: var(--font-display); font-size: 1.05rem; line-height: 1.35; }
-  .map-deliv-item { display: flex; align-items: flex-start; gap: 9px; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
+  .map-deliv-item { display: flex; align-items: center; gap: 9px; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
   .map-deliv-item:last-child { border-bottom: none; }
-  .map-task-list { list-style: none; }
-  .map-task-list li { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 0.83rem; line-height: 1.4; }
-  .map-task-list li:last-child { border-bottom: none; }
+  .map-task-group { margin-bottom: 4px; }
+  .map-task-group:last-child { margin-bottom: 0; }
+  .map-task-divider { height: 1px; background: #f0f0f0; margin: 5px 0; }
+  .map-task-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+  .map-task-text { flex: 1; font-size: 0.82rem; color: var(--charcoal); line-height: 1.4; }
+  .map-status-select { border: none; border-radius: 5px; padding: 3px 7px; font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; cursor: pointer; outline: none; white-space: nowrap; flex-shrink: 0; }
+  .map-status-select.ns { background: #e8e8e8; color: #555; }
+  .map-status-select.ip { background: #FFF3CD; color: #7D5A00; }
+  .map-status-select.cp { background: #D6F0E0; color: #1A7A4A; }
+  .map-status-select.oh { background: #FFE4E4; color: #b22222; }
+  .map-status-select {
+    border: none; border-radius: 5px; padding: 3px 7px;
+    font-family: var(--font-body); font-size: 0.72rem; font-weight: 600;
+    cursor: pointer; outline: none; white-space: nowrap; flex-shrink: 0;
+  }
+  .map-status-select.ns { background: #e8e8e8; color: #555; }
+  .map-status-select.ip { background: #FFF3CD; color: #7D5A00; }
+  .map-status-select.cp { background: #D6F0E0; color: #1A7A4A; }
+  .map-status-select.oh { background: #FFE4E4; color: #b22222; }
 
   /* Plan */
   .plan-goals { display: grid; gap: 20px; }
@@ -444,6 +460,9 @@ function cycleStatus(taskId) {
 }
 
 // ── MAP VIEW ──────────────────────────────────────────────────────────────────
+function msc(s) {
+  if(s==='Complete') return 'cp'; if(s==='In Progress') return 'ip'; if(s==='On Hold') return 'oh'; return 'ns';
+}
 function renderMap() {
   const tbody=document.getElementById('map-tbody'); tbody.innerHTML='';
   data.goals.forEach(goal => {
@@ -452,51 +471,57 @@ function renderMap() {
     const tasks=data.tasks.filter(t=>t.goalId===goal.id);
     const tr=document.createElement('tr');
 
-    // Annual goal
     const tdG=document.createElement('td');
     tdG.style.cssText=`background:${c.light};border-left:5px solid ${c.main};vertical-align:middle`;
     tdG.innerHTML=`<div style="font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${c.main};margin-bottom:5px">GOAL ${goal.num}</div><div class="map-annual">${goal.title}</div>`;
 
-    // Q1
     const tdQ=document.createElement('td');
     tdQ.style.cssText=`background:${c.dark};vertical-align:middle`;
     tdQ.innerHTML=`<div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:6px">Q1 · Jan – Mar 2026</div><div style="font-size:0.875rem;line-height:1.4;font-style:italic;color:rgba(255,255,255,0.92)">${q?q.objective:'—'}</div>`;
 
-    // Deliverables — colored bullets
+    // Deliverables — legend, vertically centered, no month label
     const tdD=document.createElement('td');
-    tdD.style.cssText=`background:${c.light};border-left:4px solid ${c.main};vertical-align:top`;
-    let dHtml=`<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${c.main};margin-bottom:8px">February 2026</div>`;
-    if(delivs.length) {
-      dHtml+=delivs.map(d=>{
-        const dc='#'+d.color.replace('#','');
-        return `<div class="map-deliv-item">
-          <div class="bullet-dot-lg" style="background:${dc};margin-top:3px;flex-shrink:0"></div>
-          <div style="font-size:0.85rem;color:var(--charcoal);line-height:1.4">${d.title}</div>
-        </div>`;
-      }).join('');
-    } else { dHtml+='<div style="font-size:0.85rem;font-style:italic;color:#888">—</div>'; }
-    tdD.innerHTML=dHtml;
+    tdD.style.cssText=`background:${c.light};border-left:4px solid ${c.main};vertical-align:middle`;
+    tdD.innerHTML=delivs.length
+      ? delivs.map(d=>`<div class="map-deliv-item">
+          <div class="bullet-dot-lg" style="background:#${d.color.replace('#','')};flex-shrink:0"></div>
+          <div style="font-size:0.83rem;color:var(--charcoal);line-height:1.35">${d.title}</div>
+        </div>`).join('')
+      : '<div style="font-size:0.85rem;font-style:italic;color:#888">—</div>';
 
-    // Tasks — colored bullets matching deliverable
+    // Tasks — grouped by deliverable, dividers between groups, status dropdowns
     const tdT=document.createElement('td'); tdT.style.cssText='vertical-align:top;background:#fff';
-    const ul=document.createElement('ul'); ul.className='map-task-list';
-    tasks.forEach(t => {
-      const dc=dColor(t.deliverableId), s=sc(t.status);
-      const li=document.createElement('li');
-      li.style.cssText=t.status==='Complete'?'color:#aaa;text-decoration:line-through':'';
-      li.innerHTML=`
-        <div class="bullet-dot" style="background:${dc};margin-top:4px;flex-shrink:0"></div>
-        <span style="flex:1">${t.text}</span>
-        <span style="font-size:0.68rem;padding:2px 7px;border-radius:10px;white-space:nowrap;margin-left:4px;flex-shrink:0;
-          background:${s==='complete'?'#D6F0E0':s==='progress'?'#FFF3CD':'#F7F6F4'};
-          color:${s==='complete'?'#1A7A4A':s==='progress'?'#7D5A00':'#767676'}">${t.status}</span>`;
-      ul.appendChild(li);
+    const byDeliv={};
+    tasks.forEach(t=>{ if(!byDeliv[t.deliverableId]) byDeliv[t.deliverableId]=[]; byDeliv[t.deliverableId].push(t); });
+    const groups=Object.entries(byDeliv);
+    groups.forEach(([dId,dTasks],gi)=>{
+      const dc=dColor(dId);
+      const grp=document.createElement('div'); grp.className='map-task-group';
+      dTasks.forEach(t=>{
+        const item=document.createElement('div'); item.className='map-task-item';
+        item.innerHTML=`
+          <div class="bullet-dot" style="background:${dc};flex-shrink:0"></div>
+          <span class="map-task-text">${t.text}</span>
+          <select class="map-status-select ${msc(t.status)}" data-task-id="${t.id}" onchange="handleMapStatus(this)">
+            <option ${t.status==='Not Started'?'selected':''}>Not Started</option>
+            <option ${t.status==='In Progress'?'selected':''}>In Progress</option>
+            <option ${t.status==='Complete'?'selected':''}>Complete</option>
+            <option ${t.status==='On Hold'?'selected':''}>On Hold</option>
+          </select>`;
+        grp.appendChild(item);
+      });
+      tdT.appendChild(grp);
+      if(gi<groups.length-1){ const div=document.createElement('div'); div.className='map-task-divider'; tdT.appendChild(div); }
     });
-    tdT.appendChild(ul);
 
     tr.appendChild(tdG); tr.appendChild(tdQ); tr.appendChild(tdD); tr.appendChild(tdT);
     tbody.appendChild(tr);
   });
+}
+function handleMapStatus(sel) {
+  const m={'Not Started':'ns','In Progress':'ip','Complete':'cp','On Hold':'oh'};
+  sel.className='map-status-select '+(m[sel.value]||'ns');
+  updateTaskStatus(sel.dataset.taskId, sel.value);
 }
 
 // ── PLAN VIEW ─────────────────────────────────────────────────────────────────
