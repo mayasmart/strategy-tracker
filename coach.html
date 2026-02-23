@@ -16,12 +16,6 @@
     --light-gray:  #F7F6F4;
     --goldenrod:   #D9BC52;
     --white:       #FFFFFF;
-    --teal-light:      #E6F6F7;
-    --goldenrod-light: #FDF7E3;
-    --navy-light:      #ECEEF5;
-    --teal-dark:       #005A5E;
-    --goldenrod-dark:  #A07E00;
-    --navy-dark:       #1E2545;
     --font-display: 'DM Serif Display', serif;
     --font-body:    'DM Sans', sans-serif;
     --radius: 10px;
@@ -30,8 +24,6 @@
   }
   html, body { height: 100%; font-family: var(--font-body); background: var(--light-gray); color: var(--charcoal); font-size: 15px; line-height: 1.5; }
   .app { display: flex; flex-direction: column; min-height: 100vh; }
-
-  /* Header */
   header { background: var(--dark-teal); padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.18); }
   .logo { font-family: var(--font-display); font-size: 1.25rem; color: var(--white); }
   .logo span { color: var(--happy-teal); }
@@ -41,7 +33,6 @@
   nav button:hover { color: var(--white); background: rgba(255,255,255,0.08); }
   nav button.active { color: var(--dark-teal); background: var(--happy-teal); font-weight: 600; }
 
-  /* Loading */
   #loading-overlay { position: fixed; inset: 0; background: var(--dark-teal); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.4s; }
   #loading-overlay.hidden { opacity: 0; pointer-events: none; }
   .loading-logo { font-family: var(--font-display); font-size: 2rem; color: var(--white); margin-bottom: 6px; }
@@ -49,25 +40,20 @@
   .loading-sub { font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-bottom: 20px; letter-spacing: 0.06em; text-transform: uppercase; }
   .loading-bar { width: 200px; height: 3px; background: rgba(255,255,255,0.15); border-radius: 2px; overflow: hidden; }
   .loading-fill { height: 100%; background: var(--happy-teal); border-radius: 2px; animation: loadpulse 1.2s ease-in-out infinite; }
-  @keyframes loadpulse { 0%,100% { width: 20%; margin-left: 0; } 50% { width: 60%; margin-left: 40%; } }
+  @keyframes loadpulse { 0%,100%{width:20%;margin-left:0} 50%{width:60%;margin-left:40%} }
 
-  /* Main */
   main { flex: 1; padding: 32px; max-width: 1280px; margin: 0 auto; width: 100%; }
   .view { display: none; animation: fadeIn 0.22s ease; }
   .view.active { display: block; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
   .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
   .section-title { font-family: var(--font-display); font-size: 1.7rem; color: var(--dark-teal); }
   .section-subtitle { font-size: 0.85rem; color: #888; margin-top: 2px; }
 
-  /* Status badge */
-  .status-badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
-  .status-badge.complete   { background: #D6F0E0; color: #1A7A4A; }
-  .status-badge.progress   { background: #FFF3CD; color: #7D5A00; }
-  .status-badge.notstarted { background: #F7F6F4; color: #767676; border: 1px solid #ddd; }
+  .bullet-dot    { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+  .bullet-dot-lg { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; }
 
-  /* ── Weekly view ── */
+  /* Weekly */
   .weekly-header-bar { background: var(--dark-teal); border-radius: var(--radius); padding: 20px 28px; margin-bottom: 28px; display: flex; align-items: center; justify-content: space-between; }
   .weekly-week-label { font-family: var(--font-display); font-size: 1.4rem; color: var(--white); }
   .weekly-stats { display: flex; gap: 24px; }
@@ -78,32 +64,36 @@
   .weekly-goal-block { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
   .weekly-goal-banner { padding: 14px 22px; display: flex; align-items: center; gap: 10px; }
   .weekly-goal-banner-title { font-family: var(--font-display); font-size: 1rem; color: var(--white); }
-  .weekly-milestone-block { border-bottom: 1px solid var(--light-gray); }
-  .weekly-milestone-block:last-child { border-bottom: none; }
-  .weekly-milestone-header { padding: 10px 22px; display: flex; align-items: center; gap: 10px; background: #fafafa; border-bottom: 1px solid var(--light-gray); }
-  .weekly-milestone-id { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 4px; }
-  .weekly-milestone-title { font-size: 0.875rem; font-weight: 600; color: var(--dark-teal); }
+  .deliverable-group { border-bottom: 1px solid var(--light-gray); }
+  .deliverable-group:last-child { border-bottom: none; }
+  .deliverable-header { padding: 10px 22px; display: flex; align-items: center; gap: 10px; background: #fafafa; border-bottom: 1px solid var(--light-gray); border-left: 4px solid transparent; }
+  .deliverable-title { font-size: 0.875rem; font-weight: 600; color: var(--dark-teal); }
+  .milestone-chip { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 4px; margin-left: auto; white-space: nowrap; }
   .task-list { padding: 4px 0; }
-  .task-row { display: flex; align-items: center; gap: 12px; padding: 10px 22px; border-bottom: 1px solid #f5f5f5; }
+  .task-row { display: flex; align-items: center; gap: 10px; padding: 10px 22px; border-bottom: 1px solid #f5f5f5; }
   .task-row:last-child { border-bottom: none; }
   .task-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .task-dot.complete   { background: #1A7A4A; }
-  .task-dot.progress   { background: #D9BC52; }
-  .task-dot.notstarted { background: #ccc; }
   .task-text { flex: 1; font-size: 0.875rem; color: var(--charcoal); line-height: 1.4; }
   .task-text.done { text-decoration: line-through; color: #aaa; }
+  .status-badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+  .status-badge.complete   { background: #D6F0E0; color: #1A7A4A; }
+  .status-badge.progress   { background: #FFF3CD; color: #7D5A00; }
+  .status-badge.notstarted { background: #F7F6F4; color: #767676; border: 1px solid #ddd; }
 
-  /* ── Map view ── */
+  /* Map */
   .map-view-inner { overflow-x: auto; }
   .map-table { width: 100%; min-width: 900px; border-collapse: separate; border-spacing: 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-lg); }
   .map-table th { background: var(--dark-teal); color: var(--white); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 14px 18px; text-align: left; }
   .map-table td { padding: 18px; vertical-align: top; border-bottom: 1px solid rgba(0,0,0,0.05); }
   .map-table tr:last-child td { border-bottom: none; }
   .map-annual { font-family: var(--font-display); font-size: 1.05rem; line-height: 1.35; }
+  .map-deliv-item { display: flex; align-items: flex-start; gap: 9px; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
+  .map-deliv-item:last-child { border-bottom: none; }
   .map-task-list { list-style: none; }
-  .map-task-list li { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; font-size: 0.85rem; line-height: 1.4; flex-wrap: wrap; }
+  .map-task-list li { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 0.83rem; line-height: 1.4; }
+  .map-task-list li:last-child { border-bottom: none; }
 
-  /* ── Progress view ── */
+  /* Progress */
   .progress-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
   .progress-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
   .progress-card-header { padding: 18px 22px 14px; }
@@ -114,13 +104,9 @@
   .progress-bar-wrap { height: 8px; background: var(--mint); border-radius: 4px; overflow: hidden; margin: 14px 0 8px; }
   .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
   .progress-meta { display: flex; gap: 16px; font-size: 0.8rem; color: #888; padding: 0 22px 16px; }
-  .progress-meta span { display: flex; align-items: center; gap: 5px; }
   .mini-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 
-  /* Read-only notice */
-  .readonly-notice { background: var(--mint); border-radius: 8px; padding: 10px 18px; margin-bottom: 20px; font-size: 0.82rem; color: var(--dark-teal); display: flex; align-items: center; gap: 8px; }
-
-  /* Error */
+  .readonly-notice { background: var(--mint); border-radius: 8px; padding: 10px 18px; margin-bottom: 20px; font-size: 0.82rem; color: var(--dark-teal); }
   .error-banner { background: #fff0f0; border: 1px solid #fcc; border-radius: 8px; padding: 12px 18px; margin-bottom: 20px; font-size: 0.85rem; color: #b22222; display: none; }
   .error-banner.visible { display: block; }
 </style>
@@ -146,11 +132,8 @@
   <main>
     <div class="error-banner" id="error-banner"></div>
 
-    <!-- Weekly Review -->
     <div class="view active" id="view-weekly">
-      <div class="readonly-notice">
-        👁 Read-only view — updated in real time from Maya's tracker
-      </div>
+      <div class="readonly-notice">👁 Read-only — updates in real time from Maya's tracker</div>
       <div class="weekly-header-bar">
         <div>
           <div style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:4px;">Week of</div>
@@ -161,20 +144,19 @@
       <div class="weekly-goals" id="weekly-goals-container"></div>
     </div>
 
-    <!-- Strategy Map -->
     <div class="view" id="view-map">
       <div class="section-header">
         <div>
           <div class="section-title">Strategy Map</div>
-          <div class="section-subtitle">Annual goals → Q1 strategy → February focus → this week's tasks</div>
+          <div class="section-subtitle">Annual goals → Q1 strategy → February deliverables → this week's tasks</div>
         </div>
       </div>
       <div class="map-view-inner">
         <table class="map-table">
           <thead><tr>
-            <th style="width:18%">Annual Goal</th>
-            <th style="width:20%">Q1 Strategy</th>
-            <th style="width:18%">February Focus</th>
+            <th style="width:15%">Annual Goal</th>
+            <th style="width:19%">Q1 Strategy</th>
+            <th style="width:23%">February Deliverables</th>
             <th>This Week's Tasks</th>
           </tr></thead>
           <tbody id="map-tbody"></tbody>
@@ -182,12 +164,11 @@
       </div>
     </div>
 
-    <!-- Progress -->
     <div class="view" id="view-progress">
       <div class="section-header">
         <div>
           <div class="section-title">Progress</div>
-          <div class="section-subtitle">Completion by goal for the week of February 23, 2026</div>
+          <div class="section-subtitle">Completion by goal — week of February 23, 2026</div>
         </div>
       </div>
       <div class="progress-grid" id="progress-grid"></div>
@@ -195,246 +176,207 @@
   </main>
 </div>
 
-<script src="https://apis.google.com/js/api.js"></script>
 <script>
 const SHEET_ID = '1ZloCLoNhaVjjr57vWJrOstS1NszShNpiyk9cL4bXgS8';
 const API_KEY  = 'AIzaSyBcvW_KC3SIvOr5dCOwC6zkiVThs-LnKBQ';
-
-const COLORS = {
+const GOAL_COLORS = {
   '1': { main: '#27A8AF', light: '#E6F6F7', dark: '#005A5E' },
   '2': { main: '#D9BC52', light: '#FDF7E3', dark: '#A07E00' },
   '3': { main: '#39436e', light: '#ECEEF5', dark: '#1E2545' },
 };
 
-let data = { goals: [], quarters: [], months: [], tasks: [] };
+let data = { goals:[], quarters:[], deliverables:[], tasks:[] };
 
-// ── Init ──────────────────────────────────────────────────────────────────────
 gapi.load('client', async () => {
-  await gapi.client.init({
-    apiKey: API_KEY,
-    discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
-  });
+  await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'] });
   loadAllData();
 });
 
 async function loadAllData() {
   try {
-    const [goalsRes, quartersRes, monthsRes, tasksRes] = await Promise.all([
-      gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: 'Goals!A2:D100' }),
-      gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: 'Quarters!A2:E100' }),
-      gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: 'Months!A2:E100' }),
-      gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: 'Tasks!A2:I200' }),
+    const [gR,qR,dR,tR] = await Promise.all([
+      gapi.client.sheets.spreadsheets.values.get({spreadsheetId:SHEET_ID,range:'Goals!A2:D100'}),
+      gapi.client.sheets.spreadsheets.values.get({spreadsheetId:SHEET_ID,range:'Quarters!A2:E100'}),
+      gapi.client.sheets.spreadsheets.values.get({spreadsheetId:SHEET_ID,range:'Deliverables!A2:F200'}),
+      gapi.client.sheets.spreadsheets.values.get({spreadsheetId:SHEET_ID,range:'Tasks!A2:H300'}),
     ]);
-
-    data.goals    = parseRows(goalsRes.result.values,    ['id','num','title','color']);
-    data.quarters = parseRows(quartersRes.result.values, ['id','goalId','label','dates','objective']);
-    data.months   = parseRows(monthsRes.result.values,   ['id','quarterId','goalId','label','focus']);
-    data.tasks    = parseRows(tasksRes.result.values,    ['id','goalId','milestoneId','milestoneCode','milestoneTitle','monthId','weekOf','text','status']);
-
-    ['goals','quarters','months','tasks'].forEach(k => {
-      data[k] = data[k].filter(r => r.id && !r.id.startsWith('↑'));
-    });
-
-    hideLoading();
-    renderWeekly();
+    data.goals        = clean(parse(gR.result.values, ['id','num','title','color']));
+    data.quarters     = clean(parse(qR.result.values, ['id','goalId','label','dates','objective']));
+    data.deliverables = clean(parse(dR.result.values, ['id','quarterId','goalId','month','title','color']));
+    data.tasks        = clean(parse(tR.result.values, ['id','goalId','deliverableId','milestoneCode','milestoneTitle','weekOf','text','status']));
+    hideLoading(); renderWeekly();
   } catch(e) {
     hideLoading();
-    showError('Could not load data. The sheet may not be publicly shared yet. ' + (e.message || ''));
+    showError('Could not load data. The sheet may not be publicly shared yet. '+(e.message||''));
   }
 }
 
-function parseRows(rows, keys) {
-  if (!rows) return [];
-  return rows.map(row => {
-    const obj = {};
-    keys.forEach((k, i) => obj[k] = (row[i] || '').trim());
-    return obj;
-  }).filter(r => Object.values(r).some(v => v));
+function parse(rows, keys) {
+  if(!rows) return [];
+  return rows.map(row=>{const o={};keys.forEach((k,i)=>o[k]=(row[i]||'').trim());return o;})
+             .filter(r=>Object.values(r).some(v=>v));
 }
-
+function clean(arr) { return arr.filter(r=>r.id&&!r.id.startsWith('↑')); }
 function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
-function showError(msg) {
-  const el = document.getElementById('error-banner');
-  el.textContent = msg; el.classList.add('visible');
-}
+function showError(msg) { const el=document.getElementById('error-banner'); el.textContent=msg; el.classList.add('visible'); }
+function dColor(dId) { const d=data.deliverables.find(x=>x.id===dId); return d?'#'+d.color.replace('#',''):'#aaa'; }
+function gc(goalId) { const g=data.goals.find(x=>x.id===goalId); return GOAL_COLORS[g?g.num:'1']||GOAL_COLORS['1']; }
+function sc(s) { return s==='Complete'?'complete':s==='In Progress'?'progress':'notstarted'; }
 
-function statusClass(s) {
-  if (s === 'Complete')    return 'complete';
-  if (s === 'In Progress') return 'progress';
-  return 'notstarted';
-}
-function getColors(goalId) {
-  const g = data.goals.find(x => x.id === goalId);
-  return COLORS[g ? g.num : '1'] || COLORS['1'];
-}
-
-// ── View Switching ────────────────────────────────────────────────────────────
 function showView(name) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
-  ['weekly','map','progress'].forEach((v, i) => {
-    if (v === name) document.querySelectorAll('nav button')[i].classList.add('active');
-  });
-  if (name === 'weekly')   renderWeekly();
-  if (name === 'map')      renderMap();
-  if (name === 'progress') renderProgress();
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  ['weekly','map','progress'].forEach((v,i)=>{if(v===name) document.querySelectorAll('nav button')[i].classList.add('active');});
+  if(name==='weekly')   renderWeekly();
+  if(name==='map')      renderMap();
+  if(name==='progress') renderProgress();
 }
 
-// ── Weekly View (read-only) ───────────────────────────────────────────────────
 function renderWeekly() {
-  const container = document.getElementById('weekly-goals-container');
-  const statsEl   = document.getElementById('weekly-stats');
-  const allTasks  = data.tasks;
-  const total     = allTasks.length;
-  const done      = allTasks.filter(t => t.status === 'Complete').length;
-  const progress  = allTasks.filter(t => t.status === 'In Progress').length;
-  const pct       = total ? Math.round(done / total * 100) : 0;
-
-  statsEl.innerHTML = `
+  const statsEl=document.getElementById('weekly-stats'), cont=document.getElementById('weekly-goals-container');
+  const all=data.tasks, total=all.length, done=all.filter(t=>t.status==='Complete').length;
+  const inp=all.filter(t=>t.status==='In Progress').length, pct=total?Math.round(done/total*100):0;
+  statsEl.innerHTML=`
     <div class="weekly-stat"><div class="weekly-stat-num">${total}</div><div class="weekly-stat-label">Tasks</div></div>
     <div class="weekly-stat"><div class="weekly-stat-num" style="color:#D6F0E0">${done}</div><div class="weekly-stat-label">Complete</div></div>
-    <div class="weekly-stat"><div class="weekly-stat-num" style="color:var(--goldenrod)">${progress}</div><div class="weekly-stat-label">In Progress</div></div>
+    <div class="weekly-stat"><div class="weekly-stat-num" style="color:var(--goldenrod)">${inp}</div><div class="weekly-stat-label">In Progress</div></div>
     <div class="weekly-stat"><div class="weekly-stat-num">${pct}%</div><div class="weekly-stat-label">Done</div></div>`;
+  cont.innerHTML='';
 
-  container.innerHTML = '';
   data.goals.forEach(goal => {
-    const goalTasks = allTasks.filter(t => t.goalId === goal.id);
-    if (!goalTasks.length) return;
-    const c = getColors(goal.id);
-    const m = data.months.find(mo => mo.goalId === goal.id);
-    const goalDone = goalTasks.filter(t => t.status === 'Complete').length;
-    const goalPct  = Math.round(goalDone / goalTasks.length * 100);
+    const goalTasks=all.filter(t=>t.goalId===goal.id); if(!goalTasks.length) return;
+    const c=gc(goal.id), gDone=goalTasks.filter(t=>t.status==='Complete').length;
+    const gPct=Math.round(gDone/goalTasks.length*100);
+    const delivIds=[...new Set(goalTasks.map(t=>t.deliverableId))];
 
-    const msGroups = {};
-    goalTasks.forEach(t => {
-      if (!msGroups[t.milestoneId]) msGroups[t.milestoneId] = { code: t.milestoneCode, title: t.milestoneTitle, tasks: [] };
-      msGroups[t.milestoneId].tasks.push(t);
-    });
-
-    const block = document.createElement('div');
-    block.className = 'weekly-goal-block';
-    block.innerHTML = `
+    const block=document.createElement('div'); block.className='weekly-goal-block';
+    block.innerHTML=`
       <div class="weekly-goal-banner" style="background:${c.main}">
-        <div style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.4);flex-shrink:0"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.35);flex-shrink:0"></div>
         <div class="weekly-goal-banner-title">Goal ${goal.num} · ${goal.title}</div>
-        ${m ? `<div style="font-size:0.78rem;color:rgba(255,255,255,0.7);margin-left:auto;font-style:italic;margin-right:12px">Feb focus: ${m.focus}</div>` : ''}
-        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;${!m?'margin-left:auto':''}">
-          <div style="font-size:0.75rem;color:rgba(255,255,255,0.8);font-weight:600">${goalPct}%</div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.8);font-weight:600">${gPct}%</div>
           <div style="width:60px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;overflow:hidden">
-            <div style="width:${goalPct}%;height:100%;background:rgba(255,255,255,0.85);border-radius:2px"></div>
+            <div style="width:${gPct}%;height:100%;background:rgba(255,255,255,0.85);border-radius:2px"></div>
           </div>
         </div>
       </div>`;
 
-    Object.entries(msGroups).forEach(([msId, ms]) => {
-      const msBlock = document.createElement('div');
-      msBlock.className = 'weekly-milestone-block';
-      msBlock.innerHTML = `
-        <div class="weekly-milestone-header">
-          <span class="weekly-milestone-id" style="background:${c.light};color:${c.dark}">${ms.code}</span>
-          <span class="weekly-milestone-title">${ms.title}</span>
-        </div>`;
+    delivIds.forEach(dId => {
+      const deliv=data.deliverables.find(d=>d.id===dId);
+      const dc=dColor(dId), dTasks=goalTasks.filter(t=>t.deliverableId===dId);
+      const dGroup=document.createElement('div'); dGroup.className='deliverable-group';
+      const dHdr=document.createElement('div'); dHdr.className='deliverable-header';
+      dHdr.style.borderLeftColor=dc;
+      dHdr.innerHTML=`
+        <div class="bullet-dot-lg" style="background:${dc}"></div>
+        <div class="deliverable-title">${deliv?deliv.title:dId}</div>
+        ${dTasks[0]?`<span class="milestone-chip" style="background:${c.light};color:${c.dark}">${dTasks[0].milestoneCode}</span>`:''}`;
+      dGroup.appendChild(dHdr);
 
-      const taskList = document.createElement('div');
-      taskList.className = 'task-list';
-      ms.tasks.forEach(task => {
-        const sc = statusClass(task.status);
-        const row = document.createElement('div');
-        row.className = 'task-row';
-        row.innerHTML = `
-          <div class="task-dot ${sc}"></div>
+      const tList=document.createElement('div'); tList.className='task-list';
+      dTasks.forEach(task => {
+        const s=sc(task.status), row=document.createElement('div'); row.className='task-row';
+        row.innerHTML=`
+          <div class="bullet-dot" style="background:${dc}"></div>
           <div class="task-text ${task.status==='Complete'?'done':''}">${task.text}</div>
-          <span class="status-badge ${sc}">${task.status}</span>`;
-        taskList.appendChild(row);
+          <span class="status-badge ${s}">${task.status}</span>`;
+        tList.appendChild(row);
       });
-      msBlock.appendChild(taskList);
-      block.appendChild(msBlock);
+      dGroup.appendChild(tList);
+      block.appendChild(dGroup);
     });
-
-    container.appendChild(block);
+    cont.appendChild(block);
   });
 }
 
-// ── Map View ──────────────────────────────────────────────────────────────────
 function renderMap() {
-  const tbody = document.getElementById('map-tbody');
-  tbody.innerHTML = '';
+  const tbody=document.getElementById('map-tbody'); tbody.innerHTML='';
   data.goals.forEach(goal => {
-    const c = getColors(goal.id);
-    const q = data.quarters.find(q => q.goalId === goal.id && q.label === 'Q1');
-    const m = data.months.find(m => m.goalId === goal.id);
-    const tasks = data.tasks.filter(t => t.goalId === goal.id);
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="background:${c.light};border-left:5px solid ${c.main};vertical-align:middle">
-        <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${c.main};margin-bottom:5px">GOAL ${goal.num}</div>
-        <div class="map-annual">${goal.title}</div>
-      </td>
-      <td style="background:${c.dark};vertical-align:middle">
-        <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:6px">Q1 · Jan – Mar 2026</div>
-        <div style="font-size:0.875rem;line-height:1.4;font-style:italic;color:rgba(255,255,255,0.92)">${q ? q.objective : '—'}</div>
-      </td>
-      <td style="background:${c.light};border-left:4px solid ${c.main};vertical-align:middle">
-        <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${c.main};margin-bottom:4px">February 2026</div>
-        <div style="font-size:0.875rem;font-style:italic;color:#555">${m ? m.focus : '—'}</div>
-      </td>
-      <td style="vertical-align:top;background:#fff">
-        <ul class="map-task-list">
-          ${tasks.map(t => `<li style="color:${t.status==='Complete'?'#aaa':'#424242'};${t.status==='Complete'?'text-decoration:line-through':''}">
-            <span style="color:${c.main}">•</span> ${t.text}
-            <span class="status-badge ${statusClass(t.status)}" style="font-size:0.68rem;margin-left:4px">${t.status}</span>
-          </li>`).join('')}
-        </ul>
-      </td>`;
+    const c=gc(goal.id), q=data.quarters.find(q=>q.goalId===goal.id&&q.label==='Q1');
+    const delivs=data.deliverables.filter(d=>d.goalId===goal.id);
+    const tasks=data.tasks.filter(t=>t.goalId===goal.id);
+    const tr=document.createElement('tr');
+
+    const tdG=document.createElement('td');
+    tdG.style.cssText=`background:${c.light};border-left:5px solid ${c.main};vertical-align:middle`;
+    tdG.innerHTML=`<div style="font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${c.main};margin-bottom:5px">GOAL ${goal.num}</div><div class="map-annual">${goal.title}</div>`;
+
+    const tdQ=document.createElement('td');
+    tdQ.style.cssText=`background:${c.dark};vertical-align:middle`;
+    tdQ.innerHTML=`<div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:6px">Q1 · Jan – Mar 2026</div><div style="font-size:0.875rem;line-height:1.4;font-style:italic;color:rgba(255,255,255,0.92)">${q?q.objective:'—'}</div>`;
+
+    const tdD=document.createElement('td');
+    tdD.style.cssText=`background:${c.light};border-left:4px solid ${c.main};vertical-align:top`;
+    let dHtml=`<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${c.main};margin-bottom:8px">February 2026</div>`;
+    if(delivs.length) {
+      dHtml+=delivs.map(d=>{
+        const dc='#'+d.color.replace('#','');
+        return `<div class="map-deliv-item"><div class="bullet-dot-lg" style="background:${dc};margin-top:3px;flex-shrink:0"></div><div style="font-size:0.85rem;color:var(--charcoal);line-height:1.4">${d.title}</div></div>`;
+      }).join('');
+    } else { dHtml+='<div style="font-size:0.85rem;font-style:italic;color:#888">—</div>'; }
+    tdD.innerHTML=dHtml;
+
+    const tdT=document.createElement('td'); tdT.style.cssText='vertical-align:top;background:#fff';
+    const ul=document.createElement('ul'); ul.className='map-task-list';
+    tasks.forEach(t => {
+      const dc=dColor(t.deliverableId), s=sc(t.status);
+      const li=document.createElement('li');
+      li.style.cssText=t.status==='Complete'?'color:#aaa;text-decoration:line-through':'';
+      li.innerHTML=`
+        <div class="bullet-dot" style="background:${dc};margin-top:4px;flex-shrink:0"></div>
+        <span style="flex:1">${t.text}</span>
+        <span style="font-size:0.68rem;padding:2px 7px;border-radius:10px;white-space:nowrap;margin-left:4px;flex-shrink:0;
+          background:${s==='complete'?'#D6F0E0':s==='progress'?'#FFF3CD':'#F7F6F4'};
+          color:${s==='complete'?'#1A7A4A':s==='progress'?'#7D5A00':'#767676'}">${t.status}</span>`;
+      ul.appendChild(li);
+    });
+    tdT.appendChild(ul);
+
+    tr.appendChild(tdG); tr.appendChild(tdQ); tr.appendChild(tdD); tr.appendChild(tdT);
     tbody.appendChild(tr);
   });
 }
 
-// ── Progress View ─────────────────────────────────────────────────────────────
 function renderProgress() {
-  const grid = document.getElementById('progress-grid');
-  grid.innerHTML = '';
-
+  const grid=document.getElementById('progress-grid'); grid.innerHTML='';
   data.goals.forEach(goal => {
-    const c = getColors(goal.id);
-    const goalTasks = data.tasks.filter(t => t.goalId === goal.id);
-    const total    = goalTasks.length;
-    const done     = goalTasks.filter(t => t.status === 'Complete').length;
-    const progress = goalTasks.filter(t => t.status === 'In Progress').length;
-    const notStart = goalTasks.filter(t => t.status === 'Not Started').length;
-    const pct      = total ? Math.round(done / total * 100) : 0;
+    const c=gc(goal.id), goalTasks=data.tasks.filter(t=>t.goalId===goal.id);
+    const total=goalTasks.length, done=goalTasks.filter(t=>t.status==='Complete').length;
+    const inp=goalTasks.filter(t=>t.status==='In Progress').length;
+    const ns=goalTasks.filter(t=>t.status==='Not Started').length;
+    const pct=total?Math.round(done/total*100):0;
 
-    const card = document.createElement('div');
-    card.className = 'progress-card';
-    card.style.borderTop = `4px solid ${c.main}`;
-    card.innerHTML = `
+    const card=document.createElement('div'); card.className='progress-card';
+    card.style.borderTop=`4px solid ${c.main}`;
+    card.innerHTML=`
       <div class="progress-card-header">
         <div class="progress-goal-num">Goal ${goal.num}</div>
         <div class="progress-goal-title">${goal.title}</div>
         <div class="big-pct" style="color:${c.main}">${pct}%</div>
         <div class="pct-label">complete this week</div>
-        <div class="progress-bar-wrap">
-          <div class="progress-bar-fill" style="width:${pct}%;background:${c.main}"></div>
-        </div>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%;background:${c.main}"></div></div>
       </div>
       <div class="progress-meta">
         <span><span class="mini-dot" style="background:#1A7A4A"></span>${done} complete</span>
-        <span><span class="mini-dot" style="background:#D9BC52"></span>${progress} in progress</span>
-        <span><span class="mini-dot" style="background:#ccc"></span>${notStart} not started</span>
+        <span><span class="mini-dot" style="background:#D9BC52"></span>${inp} in progress</span>
+        <span><span class="mini-dot" style="background:#ccc"></span>${ns} not started</span>
       </div>
-      <div style="padding:0 22px 18px;">
-        ${goalTasks.map(t => `
-          <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f5f5f5;font-size:0.82rem;">
-            <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${t.status==='Complete'?'#1A7A4A':t.status==='In Progress'?'#D9BC52':'#ccc'}"></div>
+      <div style="padding:0 22px 18px">
+        ${goalTasks.map(t=>{
+          const dc=dColor(t.deliverableId);
+          return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f5f5f5;font-size:0.82rem">
+            <div class="bullet-dot" style="background:${dc}"></div>
             <div style="flex:1;color:${t.status==='Complete'?'#aaa':'#424242'};${t.status==='Complete'?'text-decoration:line-through':''}">${t.text}</div>
             <span style="font-size:0.7rem;color:#aaa">${t.milestoneCode}</span>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
       </div>`;
     grid.appendChild(card);
   });
 }
 </script>
-<script async defer src="https://apis.google.com/js/api.js" onload="gapi.load('client', async () => { await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'] }); loadAllData(); })"></script>
+<script async defer src="https://apis.google.com/js/api.js" onload="gapi.load('client', async()=>{ await gapi.client.init({apiKey:API_KEY,discoveryDocs:['https://sheets.googleapis.com/$discovery/rest?version=v4']}); loadAllData(); })"></script>
 </body>
 </html>

@@ -16,12 +16,6 @@
     --light-gray:  #F7F6F4;
     --goldenrod:   #D9BC52;
     --white:       #FFFFFF;
-    --teal-light:      #E6F6F7;
-    --goldenrod-light: #FDF7E3;
-    --navy-light:      #ECEEF5;
-    --teal-dark:       #005A5E;
-    --goldenrod-dark:  #A07E00;
-    --navy-dark:       #1E2545;
     --font-display: 'DM Serif Display', serif;
     --font-body:    'DM Sans', sans-serif;
     --radius: 10px;
@@ -31,7 +25,6 @@
   html, body { height: 100%; font-family: var(--font-body); background: var(--light-gray); color: var(--charcoal); font-size: 15px; line-height: 1.5; }
   .app { display: flex; flex-direction: column; min-height: 100vh; }
 
-  /* Header */
   header { background: var(--dark-teal); padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.18); }
   .logo { font-family: var(--font-display); font-size: 1.25rem; color: var(--white); }
   .logo span { color: var(--happy-teal); }
@@ -40,57 +33,48 @@
   nav button { background: none; border: none; color: rgba(255,255,255,0.55); font-family: var(--font-body); font-size: 0.85rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 6px 16px; border-radius: 6px; cursor: pointer; transition: all 0.18s; }
   nav button:hover { color: var(--white); background: rgba(255,255,255,0.08); }
   nav button.active { color: var(--dark-teal); background: var(--happy-teal); font-weight: 600; }
-
-  /* Auth */
-  #auth-btn { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: var(--white); font-family: var(--font-body); font-size: 0.8rem; font-weight: 500; padding: 6px 14px; border-radius: 6px; cursor: pointer; transition: all 0.18s; }
+  #auth-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: var(--white); font-family: var(--font-body); font-size: 0.8rem; font-weight: 500; padding: 6px 14px; border-radius: 6px; cursor: pointer; transition: all 0.18s; }
   #auth-btn:hover { background: rgba(255,255,255,0.18); }
   #auth-status { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
   .auth-dot { width: 7px; height: 7px; border-radius: 50%; background: #aaa; display: inline-block; margin-right: 5px; }
   .auth-dot.signed-in { background: #4ade80; }
 
-  /* Loading */
   #loading-overlay { position: fixed; inset: 0; background: var(--dark-teal); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.4s; }
   #loading-overlay.hidden { opacity: 0; pointer-events: none; }
   .loading-logo { font-family: var(--font-display); font-size: 2rem; color: var(--white); margin-bottom: 12px; }
   .loading-logo span { color: var(--happy-teal); }
   .loading-bar { width: 200px; height: 3px; background: rgba(255,255,255,0.15); border-radius: 2px; overflow: hidden; }
   .loading-fill { height: 100%; background: var(--happy-teal); border-radius: 2px; animation: loadpulse 1.2s ease-in-out infinite; }
-  @keyframes loadpulse { 0%,100% { width: 20%; margin-left: 0; } 50% { width: 60%; margin-left: 40%; } }
+  @keyframes loadpulse { 0%,100%{width:20%;margin-left:0} 50%{width:60%;margin-left:40%} }
   .loading-msg { font-size: 0.8rem; color: rgba(255,255,255,0.45); margin-top: 14px; }
 
-  /* Sync indicator */
   #sync-indicator { position: fixed; bottom: 20px; right: 20px; background: var(--dark-teal); color: var(--white); font-size: 0.78rem; padding: 8px 14px; border-radius: 8px; display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow-lg); opacity: 0; transition: opacity 0.3s; z-index: 500; }
   #sync-indicator.visible { opacity: 1; }
   .sync-spinner { width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top-color: var(--happy-teal); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Main */
   main { flex: 1; padding: 32px; max-width: 1280px; margin: 0 auto; width: 100%; }
   .view { display: none; animation: fadeIn 0.22s ease; }
   .view.active { display: block; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
 
   .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
   .section-title { font-family: var(--font-display); font-size: 1.7rem; color: var(--dark-teal); }
   .section-subtitle { font-size: 0.85rem; color: #888; margin-top: 2px; }
 
-  /* Buttons */
   .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: 7px; font-family: var(--font-body); font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.16s; }
   .btn-primary { background: var(--happy-teal); color: var(--white); }
-  .btn-primary:hover { background: var(--teal-dark); }
+  .btn-primary:hover { background: #005A5E; }
   .btn-ghost { background: none; border: 1.5px solid var(--mint); color: var(--dark-teal); }
-  .btn-ghost:hover { border-color: var(--happy-teal); background: var(--teal-light); }
+  .btn-ghost:hover { border-color: var(--happy-teal); background: #E6F6F7; }
   .btn-sm { padding: 4px 11px; font-size: 0.78rem; }
   .btn-icon { background: none; border: none; cursor: pointer; color: #aaa; font-size: 1rem; padding: 3px 6px; border-radius: 4px; transition: color 0.15s; }
   .btn-icon:hover { color: var(--charcoal); }
 
-  /* Status */
-  .status-badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
-  .status-badge.complete   { background: #D6F0E0; color: #1A7A4A; }
-  .status-badge.progress   { background: #FFF3CD; color: #7D5A00; }
-  .status-badge.notstarted { background: #F7F6F4; color: #767676; border: 1px solid #ddd; }
+  .bullet-dot   { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+  .bullet-dot-lg { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; }
 
-  /* Weekly view */
+  /* Weekly */
   .weekly-header-bar { background: var(--dark-teal); border-radius: var(--radius); padding: 20px 28px; margin-bottom: 28px; display: flex; align-items: center; justify-content: space-between; }
   .weekly-week-label { font-family: var(--font-display); font-size: 1.4rem; color: var(--white); }
   .weekly-stats { display: flex; gap: 24px; }
@@ -101,18 +85,17 @@
   .weekly-goal-block { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
   .weekly-goal-banner { padding: 14px 22px; display: flex; align-items: center; gap: 10px; }
   .weekly-goal-banner-title { font-family: var(--font-display); font-size: 1rem; color: var(--white); }
-  .weekly-goal-banner-context { font-size: 0.78rem; color: rgba(255,255,255,0.7); margin-left: auto; font-style: italic; }
-  .weekly-milestone-block { border-bottom: 1px solid var(--light-gray); }
-  .weekly-milestone-block:last-child { border-bottom: none; }
-  .weekly-milestone-header { padding: 10px 22px; display: flex; align-items: center; gap: 10px; background: #fafafa; border-bottom: 1px solid var(--light-gray); }
-  .weekly-milestone-id { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 4px; }
-  .weekly-milestone-title { font-size: 0.875rem; font-weight: 600; color: var(--dark-teal); }
+  .deliverable-group { border-bottom: 1px solid var(--light-gray); }
+  .deliverable-group:last-child { border-bottom: none; }
+  .deliverable-header { padding: 10px 22px; display: flex; align-items: center; gap: 10px; background: #fafafa; border-bottom: 1px solid var(--light-gray); border-left: 4px solid transparent; }
+  .deliverable-title { font-size: 0.875rem; font-weight: 600; color: var(--dark-teal); }
+  .milestone-chip { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 4px; margin-left: auto; white-space: nowrap; }
   .task-list { padding: 4px 0; }
-  .task-row { display: flex; align-items: center; gap: 12px; padding: 9px 22px; border-bottom: 1px solid #f5f5f5; transition: background 0.12s; }
+  .task-row { display: flex; align-items: center; gap: 10px; padding: 9px 22px; border-bottom: 1px solid #f5f5f5; transition: background 0.12s; }
   .task-row:last-child { border-bottom: none; }
   .task-row:hover { background: var(--light-gray); }
   .task-check { width: 18px; height: 18px; border-radius: 4px; border: 2px solid #ccc; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; background: var(--white); }
-  .task-check.complete { background: #1A7A4A; border-color: #1A7A4A; }
+  .task-check.complete { border-color: #1A7A4A; background: #1A7A4A; }
   .task-check.progress { background: #FFF3CD; border-color: #daa520; }
   .task-check svg { display: none; }
   .task-check.complete svg { display: block; }
@@ -123,22 +106,22 @@
   .task-status-select.progress   { color: #7D5A00; background: #FFF3CD; border-color: #daa520; }
   .task-status-select.notstarted { color: #767676; background: #F7F6F4; border-color: #ccc; }
 
-  /* Map view */
+  /* Map */
   .map-view-inner { overflow-x: auto; }
   .map-table { width: 100%; min-width: 900px; border-collapse: separate; border-spacing: 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-lg); }
   .map-table th { background: var(--dark-teal); color: var(--white); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 14px 18px; text-align: left; }
   .map-table td { padding: 18px; vertical-align: top; border-bottom: 1px solid rgba(0,0,0,0.05); }
   .map-table tr:last-child td { border-bottom: none; }
-  .map-annual { font-family: var(--font-display); font-size: 1.05rem; line-height: 1.35; vertical-align: middle !important; }
+  .map-annual { font-family: var(--font-display); font-size: 1.05rem; line-height: 1.35; }
+  .map-deliv-item { display: flex; align-items: flex-start; gap: 9px; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
+  .map-deliv-item:last-child { border-bottom: none; }
   .map-task-list { list-style: none; }
-  .map-task-list li { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; font-size: 0.85rem; line-height: 1.4; flex-wrap: wrap; }
+  .map-task-list li { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 0.83rem; line-height: 1.4; }
+  .map-task-list li:last-child { border-bottom: none; }
 
-  /* Plan view */
+  /* Plan */
   .plan-goals { display: grid; gap: 20px; }
-  .goal-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; border-top: 4px solid var(--happy-teal); }
-  .goal-card[data-goal="1"] { border-top-color: var(--happy-teal); }
-  .goal-card[data-goal="2"] { border-top-color: var(--goldenrod); }
-  .goal-card[data-goal="3"] { border-top-color: var(--navy); }
+  .goal-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
   .goal-card-header { padding: 18px 22px 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
   .goal-number { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #aaa; margin-bottom: 4px; }
   .goal-title-text { font-family: var(--font-display); font-size: 1.15rem; color: var(--dark-teal); line-height: 1.3; }
@@ -149,11 +132,11 @@
   .quarter-header { padding: 10px 22px; display: flex; align-items: center; justify-content: space-between; background: var(--light-gray); }
   .quarter-label { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dark-teal); }
   .quarter-objective { font-size: 0.85rem; color: #666; margin-left: 12px; font-style: italic; }
-  .months-list { padding: 0 22px 12px; }
-  .month-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #eee; }
-  .month-row:last-child { border-bottom: none; }
-  .month-label { font-size: 0.75rem; font-weight: 600; min-width: 100px; padding-top: 2px; }
-  .month-focus { font-size: 0.875rem; color: var(--charcoal); flex: 1; }
+  .deliverables-list { padding: 8px 22px 12px; }
+  .plan-deliv-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #eee; }
+  .plan-deliv-row:last-child { border-bottom: none; }
+  .plan-deliv-text { font-size: 0.875rem; color: var(--charcoal); flex: 1; }
+  .plan-deliv-meta { font-size: 0.72rem; color: #aaa; padding-top: 2px; white-space: nowrap; }
 
   /* Modal */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,30,33,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
@@ -166,8 +149,6 @@
   .form-group label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #888; }
   .form-control { padding: 8px 12px; border: 1.5px solid var(--mint); border-radius: 7px; font-family: var(--font-body); font-size: 0.875rem; background: var(--white); color: var(--charcoal); transition: border-color 0.15s; outline: none; }
   .form-control:focus { border-color: var(--happy-teal); }
-
-  /* Error banner */
   .error-banner { background: #fff0f0; border: 1px solid #fcc; border-radius: 8px; padding: 12px 18px; margin-bottom: 20px; font-size: 0.85rem; color: #b22222; display: none; }
   .error-banner.visible { display: block; }
 </style>
@@ -178,7 +159,6 @@
   <div class="loading-bar"><div class="loading-fill"></div></div>
   <div class="loading-msg" id="loading-msg">Connecting to Google Sheets...</div>
 </div>
-
 <div id="sync-indicator">
   <div class="sync-spinner"></div>
   <span id="sync-msg">Saving...</span>
@@ -203,32 +183,30 @@
   <main>
     <div class="error-banner" id="error-banner"></div>
 
-    <!-- Weekly Review -->
     <div class="view active" id="view-weekly">
       <div class="weekly-header-bar">
         <div>
           <div style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:4px;">Week of</div>
-          <div class="weekly-week-label" id="week-label">February 23, 2026</div>
+          <div class="weekly-week-label">February 23, 2026</div>
         </div>
         <div class="weekly-stats" id="weekly-stats"></div>
       </div>
       <div class="weekly-goals" id="weekly-goals-container"></div>
     </div>
 
-    <!-- Map -->
     <div class="view" id="view-map">
       <div class="section-header">
         <div>
           <div class="section-title">Strategy Map</div>
-          <div class="section-subtitle">Annual goals → Q1 strategy → February focus → this week's tasks</div>
+          <div class="section-subtitle">Annual goals → Q1 strategy → February deliverables → this week's tasks</div>
         </div>
       </div>
       <div class="map-view-inner">
         <table class="map-table">
           <thead><tr>
-            <th style="width:18%">Annual Goal</th>
-            <th style="width:20%">Q1 Strategy</th>
-            <th style="width:18%">February Focus</th>
+            <th style="width:15%">Annual Goal</th>
+            <th style="width:19%">Q1 Strategy</th>
+            <th style="width:23%">February Deliverables</th>
             <th>This Week's Tasks</th>
           </tr></thead>
           <tbody id="map-tbody"></tbody>
@@ -236,12 +214,11 @@
       </div>
     </div>
 
-    <!-- Plan -->
     <div class="view" id="view-plan">
       <div class="section-header">
         <div>
           <div class="section-title">Plan</div>
-          <div class="section-subtitle">Manage your goals, quarterly strategies, and monthly focus areas</div>
+          <div class="section-subtitle">Manage your goals, quarterly strategies, and monthly deliverables</div>
         </div>
         <button class="btn btn-primary" onclick="openAddGoalModal()">+ Add Annual Goal</button>
       </div>
@@ -250,7 +227,6 @@
   </main>
 </div>
 
-<!-- Modal -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal">
     <div class="modal-title" id="modal-title"></div>
@@ -259,534 +235,425 @@
   </div>
 </div>
 
-<!-- Google API -->
-<script src="https://apis.google.com/js/api.js"></script>
-<script src="https://accounts.google.com/gsi/client"></script>
 <script>
-// ── Config ────────────────────────────────────────────────────────────────────
-const SHEET_ID    = '1ZloCLoNhaVjjr57vWJrOstS1NszShNpiyk9cL4bXgS8';
-const API_KEY     = 'AIzaSyBcvW_KC3SIvOr5dCOwC6zkiVThs-LnKBQ';
-const CLIENT_ID   = '1076267940073-cu6lncgl6s32v8imv8d0v3451hch4it3.apps.googleusercontent.com';
-const SCOPES      = 'https://www.googleapis.com/auth/spreadsheets';
-
-const COLORS = {
+const SHEET_ID  = '1ZloCLoNhaVjjr57vWJrOstS1NszShNpiyk9cL4bXgS8';
+const API_KEY   = 'AIzaSyBcvW_KC3SIvOr5dCOwC6zkiVThs-LnKBQ';
+const CLIENT_ID = '1076267940073-cu6lncgl6s32v8imv8d0v3451hch4it3.apps.googleusercontent.com';
+const SCOPES    = 'https://www.googleapis.com/auth/spreadsheets';
+const GOAL_COLORS = {
   '1': { main: '#27A8AF', light: '#E6F6F7', dark: '#005A5E' },
   '2': { main: '#D9BC52', light: '#FDF7E3', dark: '#A07E00' },
   '3': { main: '#39436e', light: '#ECEEF5', dark: '#1E2545' },
 };
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let data = { goals: [], quarters: [], months: [], tasks: [] };
-let tokenClient, accessToken = null;
-let gapiReady = false, gsiReady = false;
+let data = { goals:[], quarters:[], deliverables:[], tasks:[] };
+let tokenClient, accessToken = null, gapiReady = false, gsiReady = false;
 
-// ── Google API Init ───────────────────────────────────────────────────────────
 function gapiLoaded() {
   gapi.load('client', async () => {
     await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'] });
-    gapiReady = true;
-    maybeInit();
+    gapiReady = true; maybeInit();
   });
 }
-
 function gsiLoaded() {
   tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
+    client_id: CLIENT_ID, scope: SCOPES,
     callback: (resp) => {
       if (resp.error) { showError('Sign-in failed: ' + resp.error); return; }
-      accessToken = resp.access_token;
-      updateAuthUI(true);
-      loadAllData();
+      accessToken = resp.access_token; updateAuthUI(true); loadAllData();
     }
   });
-  gsiReady = true;
-  maybeInit();
+  gsiReady = true; maybeInit();
 }
-
-function maybeInit() {
-  if (!gapiReady || !gsiReady) return;
-  // Try to load data with API key first (read-only until signed in)
-  setLoadingMsg('Loading your goals...');
-  loadAllData();
-}
-
+function maybeInit() { if (gapiReady && gsiReady) loadAllData(); }
 function handleAuthClick() {
-  if (accessToken) {
-    // Sign out
-    google.accounts.oauth2.revoke(accessToken, () => {
-      accessToken = null;
-      updateAuthUI(false);
-    });
-  } else {
-    tokenClient.requestAccessToken({ prompt: 'consent' });
-  }
+  if (accessToken) { google.accounts.oauth2.revoke(accessToken, () => { accessToken=null; updateAuthUI(false); }); }
+  else tokenClient.requestAccessToken({ prompt:'consent' });
+}
+function updateAuthUI(on) {
+  document.getElementById('auth-dot').className = 'auth-dot'+(on?' signed-in':'');
+  document.getElementById('auth-label').textContent = on ? 'Signed in' : 'Not signed in';
+  document.getElementById('auth-btn').textContent = on ? 'Sign out' : 'Sign in with Google';
 }
 
-function updateAuthUI(signedIn) {
-  document.getElementById('auth-dot').className = 'auth-dot' + (signedIn ? ' signed-in' : '');
-  document.getElementById('auth-label').textContent = signedIn ? 'Signed in' : 'Not signed in';
-  document.getElementById('auth-btn').textContent = signedIn ? 'Sign out' : 'Sign in with Google';
-}
-
-// ── Data Loading ──────────────────────────────────────────────────────────────
 async function loadAllData() {
   try {
-    setLoadingMsg('Reading Goals...');
-    const [goalsRes, quartersRes, monthsRes, tasksRes] = await Promise.all([
-      gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: 'Goals!A2:D100' }),
-      gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: 'Quarters!A2:E100' }),
-      gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: 'Months!A2:E100' }),
-      gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: 'Tasks!A2:I200' }),
+    setMsg('Loading your goals...');
+    const [gR,qR,dR,tR] = await Promise.all([
+      gapi.client.sheets.spreadsheets.values.get({spreadsheetId:SHEET_ID, range:'Goals!A2:D100'}),
+      gapi.client.sheets.spreadsheets.values.get({spreadsheetId:SHEET_ID, range:'Quarters!A2:E100'}),
+      gapi.client.sheets.spreadsheets.values.get({spreadsheetId:SHEET_ID, range:'Deliverables!A2:F200'}),
+      gapi.client.sheets.spreadsheets.values.get({spreadsheetId:SHEET_ID, range:'Tasks!A2:H300'}),
     ]);
-
-    data.goals = parseRows(goalsRes.result.values, ['id','num','title','color']);
-    data.quarters = parseRows(quartersRes.result.values, ['id','goalId','label','dates','objective']);
-    data.months = parseRows(monthsRes.result.values, ['id','quarterId','goalId','label','focus']);
-    data.tasks = parseRows(tasksRes.result.values, ['id','goalId','milestoneId','milestoneCode','milestoneTitle','monthId','weekOf','text','status']);
-
-    // Filter out instruction rows (no id or id starts with ↑)
-    ['goals','quarters','months','tasks'].forEach(k => {
-      data[k] = data[k].filter(r => r.id && !r.id.startsWith('↑'));
-    });
-
-    hideLoading();
-    renderWeekly();
+    data.goals        = clean(parse(gR.result.values, ['id','num','title','color']));
+    data.quarters     = clean(parse(qR.result.values, ['id','goalId','label','dates','objective']));
+    data.deliverables = clean(parse(dR.result.values, ['id','quarterId','goalId','month','title','color']));
+    data.tasks        = clean(parse(tR.result.values, ['id','goalId','deliverableId','milestoneCode','milestoneTitle','weekOf','text','status']));
+    hideLoading(); renderWeekly();
   } catch(e) {
     hideLoading();
-    showError('Could not load data from Google Sheets. Make sure the sheet is shared publicly. ' + (e.message || ''));
+    showError('Could not load data. Make sure the sheet is publicly shared. '+(e.message||''));
   }
 }
-
-function parseRows(rows, keys) {
+function parse(rows, keys) {
   if (!rows) return [];
-  return rows.map(row => {
-    const obj = {};
-    keys.forEach((k, i) => obj[k] = (row[i] || '').trim());
-    return obj;
-  }).filter(r => Object.values(r).some(v => v));
+  return rows.map(row => { const o={}; keys.forEach((k,i) => o[k]=(row[i]||'').trim()); return o; })
+             .filter(r => Object.values(r).some(v=>v));
+}
+function clean(arr) { return arr.filter(r => r.id && !r.id.startsWith('↑')); }
+
+function dColor(delivId) {
+  const d = data.deliverables.find(x=>x.id===delivId);
+  return d ? '#'+d.color.replace('#','') : '#aaa';
+}
+function gc(goalId) {
+  const g = data.goals.find(x=>x.id===goalId);
+  return GOAL_COLORS[g?g.num:'1'] || GOAL_COLORS['1'];
+}
+function sc(s) { return s==='Complete'?'complete':s==='In Progress'?'progress':'notstarted'; }
+function uid() { return 'id'+Math.random().toString(36).slice(2,9); }
+function setMsg(m) { document.getElementById('loading-msg').textContent=m; }
+function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
+let _st;
+function showSync(msg, ok=false) {
+  clearTimeout(_st); const el=document.getElementById('sync-indicator');
+  document.getElementById('sync-msg').textContent=msg;
+  el.style.background=ok?'#1A7A4A':'var(--dark-teal)'; el.classList.add('visible');
+  if(ok) _st=setTimeout(()=>el.classList.remove('visible'),2000);
+}
+function showError(msg) {
+  const el=document.getElementById('error-banner');
+  el.textContent=msg; el.classList.add('visible');
+  setTimeout(()=>el.classList.remove('visible'),7000);
 }
 
-// ── Data Writing ──────────────────────────────────────────────────────────────
 async function updateTaskStatus(taskId, newStatus) {
-  const idx = data.tasks.findIndex(t => t.id === taskId);
-  if (idx === -1) return;
-  data.tasks[idx].status = newStatus;
-  renderWeekly();
-
-  if (!accessToken) { showError('Sign in to save changes to Google Sheets.'); return; }
-
+  const idx = data.tasks.findIndex(t=>t.id===taskId); if(idx===-1) return;
+  data.tasks[idx].status = newStatus; renderWeekly();
+  if (!accessToken) { showError('Sign in to save changes.'); return; }
   showSync('Saving...');
   try {
-    // Find the row number in the sheet (idx + 2 because row 1 is header)
-    const rowNum = idx + 2;
     await gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId: SHEET_ID,
-      range: `Tasks!I${rowNum}`,
-      valueInputOption: 'RAW',
-      resource: { values: [[newStatus]] }
+      spreadsheetId:SHEET_ID, range:`Tasks!H${idx+2}`,
+      valueInputOption:'RAW', resource:{values:[[newStatus]]}
     });
     showSync('Saved ✓', true);
-  } catch(e) {
-    showError('Could not save to Google Sheets: ' + (e.message || ''));
-    hideSync();
-  }
+  } catch(e) { showError(e.message); }
 }
 
 async function appendRow(sheet, values) {
-  if (!accessToken) { showError('Sign in to save changes to Google Sheets.'); return false; }
+  if (!accessToken) { showError('Sign in to save changes.'); return false; }
   showSync('Saving...');
   try {
     await gapi.client.sheets.spreadsheets.values.append({
-      spreadsheetId: SHEET_ID,
-      range: `${sheet}!A1`,
-      valueInputOption: 'RAW',
-      insertDataOption: 'INSERT_ROWS',
-      resource: { values: [values] }
+      spreadsheetId:SHEET_ID, range:`${sheet}!A1`,
+      valueInputOption:'RAW', insertDataOption:'INSERT_ROWS',
+      resource:{values:[values]}
     });
-    showSync('Saved ✓', true);
-    return true;
-  } catch(e) {
-    showError('Could not save: ' + (e.message || ''));
-    hideSync();
-    return false;
-  }
+    showSync('Saved ✓', true); return true;
+  } catch(e) { showError(e.message); return false; }
 }
 
-// ── UI Helpers ────────────────────────────────────────────────────────────────
-function setLoadingMsg(msg) { document.getElementById('loading-msg').textContent = msg; }
-function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
-
-let syncTimer;
-function showSync(msg, success = false) {
-  clearTimeout(syncTimer);
-  const el = document.getElementById('sync-indicator');
-  document.getElementById('sync-msg').textContent = msg;
-  el.style.background = success ? '#1A7A4A' : 'var(--dark-teal)';
-  el.classList.add('visible');
-  if (success) syncTimer = setTimeout(() => el.classList.remove('visible'), 2000);
-}
-function hideSync() { document.getElementById('sync-indicator').classList.remove('visible'); }
-
-function showError(msg) {
-  const el = document.getElementById('error-banner');
-  el.textContent = msg;
-  el.classList.add('visible');
-  setTimeout(() => el.classList.remove('visible'), 6000);
-}
-
-function statusClass(s) {
-  if (s === 'Complete')    return 'complete';
-  if (s === 'In Progress') return 'progress';
-  return 'notstarted';
-}
-function getColors(goalId) {
-  const g = data.goals.find(x => x.id === goalId);
-  return COLORS[g ? g.num : '1'] || COLORS['1'];
-}
-
-function uid() { return 'id' + Math.random().toString(36).slice(2,9); }
-
-// ── View Switching ────────────────────────────────────────────────────────────
 function showView(name) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
-  ['weekly','map','plan'].forEach((v, i) => {
-    if (v === name) document.querySelectorAll('nav button')[i].classList.add('active');
-  });
-  if (name === 'weekly') renderWeekly();
-  if (name === 'map')    renderMap();
-  if (name === 'plan')   renderPlan();
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  ['weekly','map','plan'].forEach((v,i)=>{ if(v===name) document.querySelectorAll('nav button')[i].classList.add('active'); });
+  if(name==='weekly') renderWeekly();
+  if(name==='map')    renderMap();
+  if(name==='plan')   renderPlan();
 }
 
-// ── Weekly View ───────────────────────────────────────────────────────────────
+// ── WEEKLY VIEW ───────────────────────────────────────────────────────────────
 function renderWeekly() {
-  const container = document.getElementById('weekly-goals-container');
-  const statsEl   = document.getElementById('weekly-stats');
-  const allTasks  = data.tasks;
-  const total     = allTasks.length;
-  const done      = allTasks.filter(t => t.status === 'Complete').length;
-  const progress  = allTasks.filter(t => t.status === 'In Progress').length;
-  const pct       = total ? Math.round(done / total * 100) : 0;
-
-  statsEl.innerHTML = `
+  const statsEl=document.getElementById('weekly-stats'), cont=document.getElementById('weekly-goals-container');
+  const all=data.tasks, total=all.length, done=all.filter(t=>t.status==='Complete').length;
+  const inp=all.filter(t=>t.status==='In Progress').length, pct=total?Math.round(done/total*100):0;
+  statsEl.innerHTML=`
     <div class="weekly-stat"><div class="weekly-stat-num">${total}</div><div class="weekly-stat-label">Tasks</div></div>
     <div class="weekly-stat"><div class="weekly-stat-num" style="color:#D6F0E0">${done}</div><div class="weekly-stat-label">Complete</div></div>
-    <div class="weekly-stat"><div class="weekly-stat-num" style="color:var(--goldenrod)">${progress}</div><div class="weekly-stat-label">In Progress</div></div>
+    <div class="weekly-stat"><div class="weekly-stat-num" style="color:var(--goldenrod)">${inp}</div><div class="weekly-stat-label">In Progress</div></div>
     <div class="weekly-stat"><div class="weekly-stat-num">${pct}%</div><div class="weekly-stat-label">Done</div></div>`;
-
-  container.innerHTML = '';
+  cont.innerHTML='';
 
   data.goals.forEach(goal => {
-    const goalTasks = allTasks.filter(t => t.goalId === goal.id);
-    if (!goalTasks.length) return;
-    const c = getColors(goal.id);
-    const m = data.months.find(mo => mo.goalId === goal.id);
-    const goalDone = goalTasks.filter(t => t.status === 'Complete').length;
-    const goalPct  = Math.round(goalDone / goalTasks.length * 100);
+    const goalTasks=all.filter(t=>t.goalId===goal.id); if(!goalTasks.length) return;
+    const c=gc(goal.id), gDone=goalTasks.filter(t=>t.status==='Complete').length;
+    const gPct=Math.round(gDone/goalTasks.length*100);
+    const delivIds=[...new Set(goalTasks.map(t=>t.deliverableId))];
 
-    // Group by milestone
-    const msGroups = {};
-    goalTasks.forEach(t => {
-      if (!msGroups[t.milestoneId]) msGroups[t.milestoneId] = { code: t.milestoneCode, title: t.milestoneTitle, tasks: [] };
-      msGroups[t.milestoneId].tasks.push(t);
-    });
-
-    const block = document.createElement('div');
-    block.className = 'weekly-goal-block';
-    block.innerHTML = `
+    const block=document.createElement('div'); block.className='weekly-goal-block';
+    block.innerHTML=`
       <div class="weekly-goal-banner" style="background:${c.main}">
-        <div style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.4);flex-shrink:0"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.35);flex-shrink:0"></div>
         <div class="weekly-goal-banner-title">Goal ${goal.num} · ${goal.title}</div>
-        ${m ? `<div class="weekly-goal-banner-context">Feb focus: ${m.focus}</div>` : ''}
-        <div style="margin-left:${m?'':'auto'};display:flex;align-items:center;gap:8px;flex-shrink:0">
-          <div style="font-size:0.75rem;color:rgba(255,255,255,0.8);font-weight:600">${goalPct}%</div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.8);font-weight:600">${gPct}%</div>
           <div style="width:60px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;overflow:hidden">
-            <div style="width:${goalPct}%;height:100%;background:rgba(255,255,255,0.85);border-radius:2px;transition:width 0.4s"></div>
+            <div style="width:${gPct}%;height:100%;background:rgba(255,255,255,0.85);border-radius:2px;transition:width 0.4s"></div>
           </div>
         </div>
       </div>`;
 
-    Object.entries(msGroups).forEach(([msId, ms]) => {
-      const msBlock = document.createElement('div');
-      msBlock.className = 'weekly-milestone-block';
-      msBlock.innerHTML = `
-        <div class="weekly-milestone-header">
-          <span class="weekly-milestone-id" style="background:${c.light};color:${c.dark}">${ms.code}</span>
-          <span class="weekly-milestone-title">${ms.title}</span>
-        </div>`;
+    delivIds.forEach(dId => {
+      const deliv=data.deliverables.find(d=>d.id===dId);
+      const dc=dColor(dId), dTasks=goalTasks.filter(t=>t.deliverableId===dId);
 
-      const taskList = document.createElement('div');
-      taskList.className = 'task-list';
-      ms.tasks.forEach(task => {
-        const sc = statusClass(task.status);
-        const row = document.createElement('div');
-        row.className = 'task-row';
-        row.innerHTML = `
-          <div class="task-check ${sc}" onclick="cycleStatus('${task.id}')">
+      const dGroup=document.createElement('div'); dGroup.className='deliverable-group';
+      const dHdr=document.createElement('div'); dHdr.className='deliverable-header';
+      dHdr.style.borderLeftColor=dc;
+      dHdr.innerHTML=`
+        <div class="bullet-dot-lg" style="background:${dc}"></div>
+        <div class="deliverable-title">${deliv?deliv.title:dId}</div>
+        ${dTasks[0]?`<span class="milestone-chip" style="background:${c.light};color:${c.dark}">${dTasks[0].milestoneCode}</span>`:''}`;
+      dGroup.appendChild(dHdr);
+
+      const tList=document.createElement('div'); tList.className='task-list';
+      dTasks.forEach(task => {
+        const s=sc(task.status), row=document.createElement('div'); row.className='task-row';
+        row.innerHTML=`
+          <div class="task-check ${s}" onclick="cycleStatus('${task.id}')">
             <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
+          <div class="bullet-dot" style="background:${dc}"></div>
           <div class="task-text ${task.status==='Complete'?'done':''}">${task.text}</div>
-          <select class="task-status-select ${sc}" onchange="updateTaskStatus('${task.id}', this.value)">
+          <select class="task-status-select ${s}" onchange="updateTaskStatus('${task.id}',this.value)">
             <option ${task.status==='Not Started'?'selected':''}>Not Started</option>
             <option ${task.status==='In Progress'?'selected':''}>In Progress</option>
             <option ${task.status==='Complete'?'selected':''}>Complete</option>
             <option ${task.status==='Carry Forward'?'selected':''}>Carry Forward</option>
             <option ${task.status==='Blocked'?'selected':''}>Blocked</option>
           </select>`;
-        taskList.appendChild(row);
+        tList.appendChild(row);
       });
 
-      const addRow = document.createElement('div');
-      addRow.style.cssText = 'padding:6px 22px 10px;';
-      addRow.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="openAddTaskModal('${goal.id}','${msId}','${ms.code}','${ms.title.replace(/'/g,"\\'")}')">+ Add task</button>`;
-      taskList.appendChild(addRow);
-      msBlock.appendChild(taskList);
-      block.appendChild(msBlock);
+      const addR=document.createElement('div'); addR.style.cssText='padding:6px 22px 10px;';
+      addR.innerHTML=`<button class="btn btn-ghost btn-sm" onclick="openAddTaskModal('${goal.id}','${dId}','${dTasks[0]?.milestoneCode||''}','${(dTasks[0]?.milestoneTitle||'').replace(/'/g,"\\'")}')">+ Add task</button>`;
+      tList.appendChild(addR);
+      dGroup.appendChild(tList);
+      block.appendChild(dGroup);
     });
-
-    container.appendChild(block);
+    cont.appendChild(block);
   });
 }
 
 function cycleStatus(taskId) {
-  const task = data.tasks.find(t => t.id === taskId);
-  if (!task) return;
-  const cycle = ['Not Started', 'In Progress', 'Complete'];
-  const next = cycle[(cycle.indexOf(task.status) + 1) % cycle.length];
-  updateTaskStatus(taskId, next);
+  const t=data.tasks.find(x=>x.id===taskId); if(!t) return;
+  const cycle=['Not Started','In Progress','Complete'];
+  updateTaskStatus(taskId, cycle[(cycle.indexOf(t.status)+1)%cycle.length]);
 }
 
-// ── Map View ──────────────────────────────────────────────────────────────────
+// ── MAP VIEW ──────────────────────────────────────────────────────────────────
 function renderMap() {
-  const tbody = document.getElementById('map-tbody');
-  tbody.innerHTML = '';
+  const tbody=document.getElementById('map-tbody'); tbody.innerHTML='';
   data.goals.forEach(goal => {
-    const c = getColors(goal.id);
-    const q = data.quarters.find(q => q.goalId === goal.id && q.label === 'Q1');
-    const m = data.months.find(m => m.goalId === goal.id);
-    const tasks = data.tasks.filter(t => t.goalId === goal.id);
+    const c=gc(goal.id), q=data.quarters.find(q=>q.goalId===goal.id&&q.label==='Q1');
+    const delivs=data.deliverables.filter(d=>d.goalId===goal.id);
+    const tasks=data.tasks.filter(t=>t.goalId===goal.id);
+    const tr=document.createElement('tr');
 
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="background:${c.light};border-left:5px solid ${c.main};vertical-align:middle">
-        <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${c.main};margin-bottom:5px">GOAL ${goal.num}</div>
-        <div class="map-annual">${goal.title}</div>
-      </td>
-      <td style="background:${c.dark};vertical-align:middle">
-        <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:6px">Q1 · Jan – Mar 2026</div>
-        <div style="font-size:0.875rem;line-height:1.4;font-style:italic;color:rgba(255,255,255,0.92)">${q ? q.objective : '—'}</div>
-      </td>
-      <td style="background:${c.light};border-left:4px solid ${c.main};vertical-align:middle">
-        <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${c.main};margin-bottom:4px">February 2026</div>
-        <div style="font-size:0.875rem;font-style:italic;color:#555">${m ? m.focus : '—'}</div>
-      </td>
-      <td style="vertical-align:top;background:#fff">
-        <ul class="map-task-list">
-          ${tasks.map(t => `<li style="color:${t.status==='Complete'?'#aaa':'#424242'};${t.status==='Complete'?'text-decoration:line-through':''}">
-            <span style="color:${c.main}">•</span> ${t.text}
-            <span class="status-badge ${statusClass(t.status)}" style="font-size:0.68rem;margin-left:4px">${t.status}</span>
-          </li>`).join('')}
-        </ul>
-      </td>`;
+    // Annual goal
+    const tdG=document.createElement('td');
+    tdG.style.cssText=`background:${c.light};border-left:5px solid ${c.main};vertical-align:middle`;
+    tdG.innerHTML=`<div style="font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${c.main};margin-bottom:5px">GOAL ${goal.num}</div><div class="map-annual">${goal.title}</div>`;
+
+    // Q1
+    const tdQ=document.createElement('td');
+    tdQ.style.cssText=`background:${c.dark};vertical-align:middle`;
+    tdQ.innerHTML=`<div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:6px">Q1 · Jan – Mar 2026</div><div style="font-size:0.875rem;line-height:1.4;font-style:italic;color:rgba(255,255,255,0.92)">${q?q.objective:'—'}</div>`;
+
+    // Deliverables — colored bullets
+    const tdD=document.createElement('td');
+    tdD.style.cssText=`background:${c.light};border-left:4px solid ${c.main};vertical-align:top`;
+    let dHtml=`<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${c.main};margin-bottom:8px">February 2026</div>`;
+    if(delivs.length) {
+      dHtml+=delivs.map(d=>{
+        const dc='#'+d.color.replace('#','');
+        return `<div class="map-deliv-item">
+          <div class="bullet-dot-lg" style="background:${dc};margin-top:3px;flex-shrink:0"></div>
+          <div style="font-size:0.85rem;color:var(--charcoal);line-height:1.4">${d.title}</div>
+        </div>`;
+      }).join('');
+    } else { dHtml+='<div style="font-size:0.85rem;font-style:italic;color:#888">—</div>'; }
+    tdD.innerHTML=dHtml;
+
+    // Tasks — colored bullets matching deliverable
+    const tdT=document.createElement('td'); tdT.style.cssText='vertical-align:top;background:#fff';
+    const ul=document.createElement('ul'); ul.className='map-task-list';
+    tasks.forEach(t => {
+      const dc=dColor(t.deliverableId), s=sc(t.status);
+      const li=document.createElement('li');
+      li.style.cssText=t.status==='Complete'?'color:#aaa;text-decoration:line-through':'';
+      li.innerHTML=`
+        <div class="bullet-dot" style="background:${dc};margin-top:4px;flex-shrink:0"></div>
+        <span style="flex:1">${t.text}</span>
+        <span style="font-size:0.68rem;padding:2px 7px;border-radius:10px;white-space:nowrap;margin-left:4px;flex-shrink:0;
+          background:${s==='complete'?'#D6F0E0':s==='progress'?'#FFF3CD':'#F7F6F4'};
+          color:${s==='complete'?'#1A7A4A':s==='progress'?'#7D5A00':'#767676'}">${t.status}</span>`;
+      ul.appendChild(li);
+    });
+    tdT.appendChild(ul);
+
+    tr.appendChild(tdG); tr.appendChild(tdQ); tr.appendChild(tdD); tr.appendChild(tdT);
     tbody.appendChild(tr);
   });
 }
 
-// ── Plan View ─────────────────────────────────────────────────────────────────
+// ── PLAN VIEW ─────────────────────────────────────────────────────────────────
 function renderPlan() {
-  const container = document.getElementById('plan-goals-container');
-  container.innerHTML = '';
+  const cont=document.getElementById('plan-goals-container'); cont.innerHTML='';
   data.goals.forEach(goal => {
-    const c = getColors(goal.id);
-    const quarters = data.quarters.filter(q => q.goalId === goal.id);
-    const card = document.createElement('div');
-    card.className = 'goal-card';
-    card.dataset.goal = goal.num;
-    card.innerHTML = `
+    const c=gc(goal.id), quarters=data.quarters.filter(q=>q.goalId===goal.id);
+    const card=document.createElement('div'); card.className='goal-card';
+    card.style.borderTop=`4px solid ${c.main}`;
+    card.innerHTML=`
       <div class="goal-card-header">
-        <div style="flex:1">
-          <div class="goal-number">Annual Goal ${goal.num}</div>
-          <div class="goal-title-text">${goal.title}</div>
-        </div>
+        <div style="flex:1"><div class="goal-number">Annual Goal ${goal.num}</div><div class="goal-title-text">${goal.title}</div></div>
         <div class="goal-actions">
           <button class="btn btn-ghost btn-sm" onclick="openEditGoalModal('${goal.id}')">Edit</button>
           <button class="btn btn-ghost btn-sm" onclick="openAddQuarterModal('${goal.id}')">+ Quarter</button>
         </div>
       </div>
       <div class="quarters-list" id="quarters-${goal.id}"></div>`;
-    container.appendChild(card);
+    cont.appendChild(card);
 
-    const qContainer = document.getElementById('quarters-' + goal.id);
-    if (!quarters.length) {
-      qContainer.innerHTML = `<div style="padding:14px 22px;font-size:0.85rem;color:#aaa;font-style:italic">No quarterly strategies yet.</div>`;
-    } else {
-      quarters.forEach(q => {
-        const months = data.months.filter(m => m.quarterId === q.id);
-        const qBlock = document.createElement('div');
-        qBlock.className = 'quarter-block';
-        qBlock.innerHTML = `
-          <div class="quarter-header">
-            <div style="display:flex;align-items:center;gap:8px">
-              <span class="quarter-label">${q.label} · ${q.dates}</span>
-              <span class="quarter-objective">${q.objective}</span>
-            </div>
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-ghost btn-sm" onclick="openAddMonthModal('${q.id}','${goal.id}')">+ Month</button>
-            </div>
+    const qCont=document.getElementById('quarters-'+goal.id);
+    if(!quarters.length) { qCont.innerHTML=`<div style="padding:14px 22px;font-size:0.85rem;color:#aaa;font-style:italic">No quarterly strategies yet.</div>`; return; }
+    quarters.forEach(q => {
+      const delivs=data.deliverables.filter(d=>d.quarterId===q.id);
+      const qBlock=document.createElement('div'); qBlock.className='quarter-block';
+      qBlock.innerHTML=`
+        <div class="quarter-header">
+          <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+            <span class="quarter-label">${q.label} · ${q.dates}</span>
+            <span class="quarter-objective" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${q.objective}</span>
           </div>
-          <div class="months-list" id="months-${q.id}">
-            ${!months.length ? '<div style="font-size:0.82rem;color:#aaa;font-style:italic;padding:8px 0">No monthly focus areas yet.</div>' : ''}
-          </div>`;
-        qContainer.appendChild(qBlock);
+          <button class="btn btn-ghost btn-sm" style="flex-shrink:0" onclick="openAddDeliverableModal('${q.id}','${goal.id}')">+ Deliverable</button>
+        </div>
+        <div class="deliverables-list" id="delivs-${q.id}">
+          ${!delivs.length?'<div style="font-size:0.82rem;color:#aaa;font-style:italic;padding:6px 0">No deliverables yet.</div>':''}
+        </div>`;
+      qCont.appendChild(qBlock);
 
-        const mContainer = document.getElementById('months-' + q.id);
-        months.forEach(m => {
-          const row = document.createElement('div');
-          row.className = 'month-row';
-          row.innerHTML = `
-            <div class="month-label" style="color:${c.main}">${m.label}</div>
-            <div class="month-focus">${m.focus}</div>
-            <button class="btn-icon" onclick="openEditMonthModal('${m.id}')">✎</button>`;
-          mContainer.appendChild(row);
-        });
+      const dCont=document.getElementById('delivs-'+q.id);
+      delivs.forEach(d => {
+        const dc='#'+d.color.replace('#','');
+        const row=document.createElement('div'); row.className='plan-deliv-row';
+        row.innerHTML=`
+          <div class="bullet-dot-lg" style="background:${dc};margin-top:3px"></div>
+          <div class="plan-deliv-text">${d.title}</div>
+          <div class="plan-deliv-meta">${d.month}</div>
+          <button class="btn-icon" onclick="openEditDeliverableModal('${d.id}')">✎</button>`;
+        dCont.appendChild(row);
       });
-    }
+    });
   });
 }
 
-// ── Modals ────────────────────────────────────────────────────────────────────
-function openModal(title, bodyHtml, actions) {
-  document.getElementById('modal-title').textContent = title;
-  document.getElementById('modal-body').innerHTML = bodyHtml;
-  document.getElementById('modal-actions').innerHTML = actions;
+// ── MODALS ────────────────────────────────────────────────────────────────────
+function openModal(title, body, actions) {
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-body').innerHTML=body;
+  document.getElementById('modal-actions').innerHTML=actions;
   document.getElementById('modal-overlay').classList.add('open');
-  setTimeout(() => document.querySelector('.form-control') && document.querySelector('.form-control').focus(), 100);
+  setTimeout(()=>{ const f=document.querySelector('#modal-body .form-control'); if(f)f.focus(); },100);
 }
 function closeModal(e) {
-  if (!e || e.target === document.getElementById('modal-overlay'))
+  if(!e||e.target===document.getElementById('modal-overlay'))
     document.getElementById('modal-overlay').classList.remove('open');
 }
 
 function openAddGoalModal() {
   openModal('Add Annual Goal',
     `<div class="form-group"><label>Goal Title</label><input class="form-control" id="m-val" placeholder="e.g. Launch a new product line"></div>`,
-    `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-     <button class="btn btn-primary" onclick="saveNewGoal()">Add Goal</button>`);
+    `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveNewGoal()">Add Goal</button>`);
 }
 async function saveNewGoal() {
-  const title = document.getElementById('m-val').value.trim();
-  if (!title) return;
-  const nextNum = String(data.goals.length + 1);
-  const id = 'g' + nextNum;
-  const ok = await appendRow('Goals', [id, nextNum, title, '27A8AF']);
-  if (ok) { data.goals.push({ id, num: nextNum, title, color: '27A8AF' }); closeModal(); renderPlan(); }
+  const title=document.getElementById('m-val').value.trim(); if(!title) return;
+  const n=String(data.goals.length+1), id='g'+n;
+  const ok=await appendRow('Goals',[id,n,title,'27A8AF']);
+  if(ok){data.goals.push({id,num:n,title,color:'27A8AF'}); closeModal(); renderPlan();}
 }
 
 function openEditGoalModal(goalId) {
-  const goal = data.goals.find(g => g.id === goalId);
+  const g=data.goals.find(x=>x.id===goalId);
   openModal('Edit Goal',
-    `<div class="form-group"><label>Goal Title</label><input class="form-control" id="m-val" value="${goal.title}"></div>`,
-    `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-     <button class="btn btn-primary" onclick="saveEditGoal('${goalId}')">Save</button>`);
+    `<div class="form-group"><label>Goal Title</label><input class="form-control" id="m-val" value="${g.title}"></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveEditGoal('${goalId}')">Save</button>`);
 }
 async function saveEditGoal(goalId) {
-  const title = document.getElementById('m-val').value.trim();
-  if (!title) return;
-  if (!accessToken) { showError('Sign in to save changes.'); return; }
-  const idx = data.goals.findIndex(g => g.id === goalId);
-  data.goals[idx].title = title;
+  const title=document.getElementById('m-val').value.trim(); if(!title) return;
+  if(!accessToken){showError('Sign in to save.'); return;}
+  const idx=data.goals.findIndex(g=>g.id===goalId); data.goals[idx].title=title;
   showSync('Saving...');
   try {
-    await gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId: SHEET_ID, range: `Goals!C${idx+2}`,
-      valueInputOption: 'RAW', resource: { values: [[title]] }
-    });
-    showSync('Saved ✓', true);
-  } catch(e) { showError(e.message); }
+    await gapi.client.sheets.spreadsheets.values.update({spreadsheetId:SHEET_ID,range:`Goals!C${idx+2}`,valueInputOption:'RAW',resource:{values:[[title]]}});
+    showSync('Saved ✓',true);
+  } catch(e){showError(e.message);}
   closeModal(); renderPlan();
 }
 
 function openAddQuarterModal(goalId) {
   openModal('Add Quarterly Strategy',
-    `<div class="form-group"><label>Quarter</label>
-      <select class="form-control" id="m-q-label"><option>Q1</option><option>Q2</option><option>Q3</option><option>Q4</option></select>
-    </div>
-    <div class="form-group"><label>Date Range</label><input class="form-control" id="m-q-dates" placeholder="e.g. Apr – Jun 2026"></div>
-    <div class="form-group"><label>Quarterly Objective</label><input class="form-control" id="m-q-obj" placeholder="What will you achieve this quarter?"></div>`,
-    `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-     <button class="btn btn-primary" onclick="saveNewQuarter('${goalId}')">Add</button>`);
+    `<div class="form-group"><label>Quarter</label><select class="form-control" id="m-ql"><option>Q1</option><option>Q2</option><option>Q3</option><option>Q4</option></select></div>
+     <div class="form-group"><label>Date Range</label><input class="form-control" id="m-qd" placeholder="e.g. Apr – Jun 2026"></div>
+     <div class="form-group"><label>Quarterly Objective</label><input class="form-control" id="m-qo" placeholder="What will you achieve this quarter?"></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveNewQuarter('${goalId}')">Add</button>`);
 }
 async function saveNewQuarter(goalId) {
-  const label = document.getElementById('m-q-label').value;
-  const dates = document.getElementById('m-q-dates').value.trim();
-  const obj   = document.getElementById('m-q-obj').value.trim();
-  if (!obj) return;
-  const id = uid();
-  const ok = await appendRow('Quarters', [id, goalId, label, dates, obj]);
-  if (ok) { data.quarters.push({ id, goalId, label, dates, objective: obj }); closeModal(); renderPlan(); }
+  const label=document.getElementById('m-ql').value, dates=document.getElementById('m-qd').value.trim(), obj=document.getElementById('m-qo').value.trim();
+  if(!obj) return;
+  const id=uid(), ok=await appendRow('Quarters',[id,goalId,label,dates,obj]);
+  if(ok){data.quarters.push({id,goalId,label,dates,objective:obj}); closeModal(); renderPlan();}
 }
 
-function openAddMonthModal(qId, goalId) {
-  openModal('Add Monthly Focus',
-    `<div class="form-group"><label>Month</label><input class="form-control" id="m-month-label" placeholder="e.g. March 2026"></div>
-     <div class="form-group"><label>Focus / Deliverable</label><input class="form-control" id="m-month-focus" placeholder="Key focus this month"></div>`,
-    `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-     <button class="btn btn-primary" onclick="saveNewMonth('${qId}','${goalId}')">Add</button>`);
+function openAddDeliverableModal(qId, goalId) {
+  const c=gc(goalId);
+  openModal('Add Monthly Deliverable',
+    `<div class="form-group"><label>Month</label><input class="form-control" id="m-month" placeholder="e.g. March 2026"></div>
+     <div class="form-group"><label>Deliverable Title</label><input class="form-control" id="m-title" placeholder="What will you deliver this month?"></div>
+     <div class="form-group"><label>Bullet Color (hex, no #)</label><input class="form-control" id="m-color" value="${c.main.replace('#','')}" maxlength="6"></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveNewDeliverable('${qId}','${goalId}')">Add</button>`);
 }
-async function saveNewMonth(qId, goalId) {
-  const label = document.getElementById('m-month-label').value.trim();
-  const focus = document.getElementById('m-month-focus').value.trim();
-  if (!label || !focus) return;
-  const id = uid();
-  const ok = await appendRow('Months', [id, qId, goalId, label, focus]);
-  if (ok) { data.months.push({ id, quarterId: qId, goalId, label, focus }); closeModal(); renderPlan(); }
+async function saveNewDeliverable(qId, goalId) {
+  const month=document.getElementById('m-month').value.trim(), title=document.getElementById('m-title').value.trim();
+  const color=document.getElementById('m-color').value.trim().replace('#','');
+  if(!title||!month) return;
+  const id='d'+uid(), ok=await appendRow('Deliverables',[id,qId,goalId,month,title,color]);
+  if(ok){data.deliverables.push({id,quarterId:qId,goalId,month,title,color}); closeModal(); renderPlan();}
 }
 
-function openEditMonthModal(mId) {
-  const m = data.months.find(x => x.id === mId);
-  openModal('Edit Monthly Focus',
-    `<div class="form-group"><label>Month</label><input class="form-control" id="m-month-label" value="${m.label}"></div>
-     <div class="form-group"><label>Focus / Deliverable</label><input class="form-control" id="m-month-focus" value="${m.focus}"></div>`,
-    `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-     <button class="btn btn-primary" onclick="saveEditMonth('${mId}')">Save</button>`);
+function openEditDeliverableModal(dId) {
+  const d=data.deliverables.find(x=>x.id===dId);
+  openModal('Edit Deliverable',
+    `<div class="form-group"><label>Month</label><input class="form-control" id="m-month" value="${d.month}"></div>
+     <div class="form-group"><label>Deliverable Title</label><input class="form-control" id="m-title" value="${d.title}"></div>
+     <div class="form-group"><label>Bullet Color (hex, no #)</label><input class="form-control" id="m-color" value="${d.color}" maxlength="6"></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveEditDeliverable('${dId}')">Save</button>`);
 }
-async function saveEditMonth(mId) {
-  const label = document.getElementById('m-month-label').value.trim();
-  const focus = document.getElementById('m-month-focus').value.trim();
-  if (!label || !focus) return;
-  if (!accessToken) { showError('Sign in to save changes.'); return; }
-  const idx = data.months.findIndex(x => x.id === mId);
-  data.months[idx].label = label; data.months[idx].focus = focus;
-  showSync('Saving...');
+async function saveEditDeliverable(dId) {
+  const month=document.getElementById('m-month').value.trim(), title=document.getElementById('m-title').value.trim();
+  const color=document.getElementById('m-color').value.trim().replace('#','');
+  if(!title||!month) return;
+  if(!accessToken){showError('Sign in to save.'); return;}
+  const idx=data.deliverables.findIndex(x=>x.id===dId);
+  Object.assign(data.deliverables[idx],{month,title,color}); showSync('Saving...');
   try {
-    await gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId: SHEET_ID, range: `Months!D${idx+2}:E${idx+2}`,
-      valueInputOption: 'RAW', resource: { values: [[label, focus]] }
-    });
-    showSync('Saved ✓', true);
-  } catch(e) { showError(e.message); }
+    await gapi.client.sheets.spreadsheets.values.update({spreadsheetId:SHEET_ID,range:`Deliverables!D${idx+2}:F${idx+2}`,valueInputOption:'RAW',resource:{values:[[month,title,color]]}});
+    showSync('Saved ✓',true);
+  } catch(e){showError(e.message);}
   closeModal(); renderPlan();
 }
 
-function openAddTaskModal(goalId, msId, msCode, msTitle) {
+function openAddTaskModal(goalId, dId, msCode, msTitle) {
   openModal('Add Task',
     `<div class="form-group"><label>Task Description</label><input class="form-control" id="m-val" placeholder="What needs to be done?"></div>`,
-    `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-     <button class="btn btn-primary" onclick="saveNewTask('${goalId}','${msId}','${msCode}','${msTitle}')">Add Task</button>`);
+    `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveNewTask('${goalId}','${dId}','${msCode}','${msTitle}')">Add Task</button>`);
 }
-async function saveNewTask(goalId, msId, msCode, msTitle) {
-  const text = document.getElementById('m-val').value.trim();
-  if (!text) return;
-  const monthId = (data.months.find(m => m.goalId === goalId) || {}).id || '';
-  const id = 't' + uid();
-  const weekOf = '2/23/2026';
-  const ok = await appendRow('Tasks', [id, goalId, msId, msCode, msTitle, monthId, weekOf, text, 'Not Started']);
-  if (ok) {
-    data.tasks.push({ id, goalId, milestoneId: msId, milestoneCode: msCode, milestoneTitle: msTitle, monthId, weekOf, text, status: 'Not Started' });
-    closeModal(); renderWeekly();
-  }
+async function saveNewTask(goalId, dId, msCode, msTitle) {
+  const text=document.getElementById('m-val').value.trim(); if(!text) return;
+  const id='t'+uid(), ok=await appendRow('Tasks',[id,goalId,dId,msCode,msTitle,'2/23/2026',text,'Not Started']);
+  if(ok){data.tasks.push({id,goalId,deliverableId:dId,milestoneCode:msCode,milestoneTitle:msTitle,weekOf:'2/23/2026',text,status:'Not Started'}); closeModal(); renderWeekly();}
 }
 </script>
 <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
