@@ -2061,15 +2061,20 @@ function printWeeklyReview(){
   var goalsHtml = MD.map(function(g){
     var delivsHtml = g.delivs.map(function(d){
       var tasksHtml = d.tasks.map(function(t){
-        if(d.standing && (t.target !== null && t.target !== undefined)){
-          var v = t.count||0, tgt = t.target;
-          var chipColor = v>=tgt ? '#D6F0E0;color:#1A7A4A' : '#FFF3CD;color:#7D5A00';
-          var chipTxt = v+' / '+tgt+(v>=tgt?' ✓':' ↗');
-          return '<tr><td style="padding:5px 8px;font-size:11px;color:#444">'+t.t+'</td>'
-            +'<td style="padding:5px 8px"><span style="font-size:9.5px;font-weight:600;padding:2px 7px;border-radius:10px;background:'+chipColor+'">'+chipTxt+'</span></td></tr>';
+        if(d.standing){
+          var tt=t.type||((t.target!==null&&t.target!==undefined)?'count':'check');
+          if(tt==='count'){
+            var wc=getWeekCount(t.id)||0, tgt=t.target, hasTgt=tgt!==null&&tgt!==undefined;
+            var chipColor=!hasTgt?'#eee;color:#888':wc>=tgt?'#D6F0E0;color:#1A7A4A':'#FFF3CD;color:#7D5A00';
+            var chipTxt=hasTgt?wc+' / '+tgt+(wc>=tgt?' \u2713':' \u2197'):(wc||'\u2014')+' this week';
+            return '<tr><td style="padding:5px 8px;font-size:11px;color:#444">'+t.t+'</td>'
+              +'<td style="padding:5px 8px"><span style="font-size:9.5px;font-weight:600;padding:2px 7px;border-radius:10px;background:'+chipColor+'">'+chipTxt+'</span></td></tr>';
+          }
+          var ps2=getWeekStatus(t.id);
+          return '<tr><td style="padding:5px 8px"><input type="checkbox" style="margin-right:6px"'+(ps2==='cp'?' checked':'')+'><span style="font-size:11px;color:#444'+(ps2==='cp'?';text-decoration:line-through;color:#999':'')+'">'+t.t+'</span></td>'
+            +'<td style="padding:5px 8px"><span style="font-size:9.5px;font-weight:600;padding:2px 7px;border-radius:4px;background:'+statusColor[ps2]+'">'+statusLabel[ps2]+'</span></td></tr>';
         }
-        if(d.standing){ return '<tr><td style="padding:5px 8px;font-size:11px;color:#444">'+t.t+'</td><td style="padding:5px 8px"><span style="font-size:9.5px;color:#aaa">tracked</span></td></tr>'; }
-        var ps=getWeekStatus(t.id); return '<tr><td style="padding:5px 8px"><input type="checkbox" style="margin-right:6px"'+(ps==='cp'?' checked':'')+'><span style="font-size:11px;color:#444'+(ps==='cp'?';text-decoration:line-through;color:#999':'')+'">'  +t.t+'</span></td>'
+        var ps=getWeekStatus(t.id); return '<tr><td style="padding:5px 8px"><input type="checkbox" style="margin-right:6px"'+(ps==='cp'?' checked':'')+'><span style="font-size:11px;color:#444'+(ps==='cp'?';text-decoration:line-through;color:#999':'')+'">'+t.t+'</span></td>'
           +'<td style="padding:5px 8px"><span style="font-size:9.5px;font-weight:600;padding:2px 7px;border-radius:4px;background:'+statusColor[ps]+'">'+statusLabel[ps]+'</span></td></tr>';
       }).join('');
       return '<div style="margin-bottom:2px">'
@@ -2134,22 +2139,40 @@ function printStrategyOverview(){
         +'</div>';
     }).join('');
 
+    var statusColorP={ns:'background:#e8e8e8;color:#555',ip:'background:#FFF3CD;color:#7D5A00',cp:'background:#D6F0E0;color:#1A7A4A',oh:'background:#FFE4E4;color:#b22222'};
+    var statusLabelP={ns:'Not Started',ip:'In Progress',cp:'Complete',oh:'On Hold'};
     var tasksHtml = g.delivs.map(function(d,di){
-      return d.tasks.map(function(t){
-        if(d.standing && t.target!==null && t.target!==undefined){
-          var v=t.count||0, tgt=t.target;
-          var chipStyle=v>=tgt?'background:#D6F0E0;color:#1A7A4A':'background:#FFF3CD;color:#7D5A00';
-          return '<div style="display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:1px solid #f5f5f5">'
-            +'<div style="width:6px;height:6px;border-radius:50%;background:'+d.c+';flex-shrink:0"></div>'
-            +'<span style="font-size:9.5px;color:#444;flex:1">'+t.t+'</span>'
-            +'<span style="font-size:8.5px;font-weight:600;padding:1px 6px;border-radius:8px;'+chipStyle+'">'+v+' / '+tgt+(v>=tgt?' ✓':' ↗')+'</span></div>';
+      var taskRows = d.tasks.map(function(t){
+        if(d.standing){
+          var tt=t.type||((t.target!==null&&t.target!==undefined)?'count':'check');
+          if(tt==='count'){
+            var wc=getWeekCount(t.id)||0, tgt=t.target, hasTgt=tgt!==null&&tgt!==undefined;
+            var chipStyle=!hasTgt?'background:#eee;color:#888':wc>=tgt?'background:#D6F0E0;color:#1A7A4A':'background:#FFF3CD;color:#7D5A00';
+            var chipTxt=hasTgt?wc+' / '+tgt+(wc>=tgt?' \u2713':' \u2197'):(wc||'\u2014')+' this week';
+            return '<div style="display:flex;align-items:center;gap:5px;padding:2px 0">'
+              +'<span style="font-size:9px;color:#444;flex:1">'+t.t+'</span>'
+              +'<span style="font-size:8px;font-weight:600;padding:1px 5px;border-radius:8px;'+chipStyle+'">'+chipTxt+'</span></div>';
+          }
+          var ps2=getWeekStatus(t.id);
+          return '<div style="display:flex;align-items:center;gap:5px;padding:2px 0">'
+            +'<span style="font-size:9px;color:#444;flex:1">'+t.t+'</span>'
+            +'<span style="font-size:8px;font-weight:600;padding:1px 5px;border-radius:4px;'+statusColorP[ps2]+'">'+statusLabelP[ps2]+'</span></div>';
         }
-        return '<div style="display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:1px solid #f5f5f5">'
-          +'<div style="width:6px;height:6px;border-radius:50%;background:'+d.c+';flex-shrink:0"></div>'
-          +'<span style="font-size:9.5px;color:#444;flex:1">'+t.t+'</span>'
-          var ps2=getWeekStatus(t.id); +'<span style="font-size:8.5px;font-weight:600;padding:1px 6px;border-radius:4px;'+statusColor[ps2]+'">'+statusLabel[ps2]+'</span></div>';
+        var ps=getWeekStatus(t.id);
+        return '<div style="display:flex;align-items:center;gap:5px;padding:2px 0">'
+          +'<span style="font-size:9px;color:#444;flex:1">'+t.t+'</span>'
+          +'<span style="font-size:8px;font-weight:600;padding:1px 5px;border-radius:4px;'+statusColorP[ps]+'">'+statusLabelP[ps]+'</span></div>';
       }).join('');
+      if(!taskRows) return '';
+      // Deliverable header + tasks grouped together
+      return '<div style="margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #eee">'
+        +'<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">'
+        +'<div style="width:7px;height:7px;border-radius:50%;background:'+d.c+';flex-shrink:0"></div>'
+        +'<span style="font-size:9px;font-weight:700;color:#003336">'+d.t+'</span>'
+        +(d.standing?'<span style="font-size:7px;font-weight:700;background:#DCECEC;color:#005A5E;padding:1px 4px;border-radius:2px">STANDING</span>':'')+'</div>'
+        +taskRows+'</div>';
     }).join('');
+
 
     return '<tr style="border-bottom:2px solid #eee">'
       +'<td style="padding:10px 8px;background:'+g.l+';border-left:4px solid '+g.c+';vertical-align:middle;width:16%">'
