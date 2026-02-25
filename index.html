@@ -917,8 +917,7 @@ function renderPlan(){
         +'<div class="dot-lg" style="background:'+d.c+'"></div>'
         +'<div class="dt2">'+d.t+'</div>'
         +(isStanding ? '<span style="font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--td);background:var(--mn);padding:2px 7px;border-radius:3px">Standing</span>' : '')
-        +'<button class="btn-ic" style="margin-left:auto">✎</button>'
-        +(!isStanding?'':'')
+        +'<button class="btn-ic dh-edit" data-gn="'+g.n+'" data-dt="'+d.t.replace(/"/g,'&quot;')+'" style="margin-left:auto">✎</button>'
         +'</div><div class="tl-p">'+tasksHtml+'</div></div>';
     }).join('');
 
@@ -1445,6 +1444,71 @@ function openAddStrategy(goalN){
   };
 }
 
+// Edit Deliverable modal
+function openEditDeliverable(goalN, delivTitle){
+  var g = MD.find(g=>g.n===goalN);
+  if(!g) return;
+  var d = g.delivs.find(function(d){ return d.t===delivTitle; });
+  if(!d) return;
+
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:12px;padding:28px;width:100%;max-width:380px;box-shadow:0 12px 48px rgba(0,0,0,.2)';
+
+  var colorOptions = [d.c, shadeColor(d.c,-15), shadeColor(d.c,-30)];
+  var swatchHtml = colorOptions.map(function(col,i){
+    return '<div onclick="selEDC('+i+')" id="edc-swatch-'+i+'" style="width:22px;height:22px;border-radius:50%;background:'+col+';cursor:pointer;border:3px solid '+(col===d.c?'#333':'transparent')+';transition:border .15s"></div>';
+  }).join('');
+
+  box.innerHTML = '<div style="font-family:var(--fd);font-size:1.1rem;color:var(--dt);margin-bottom:6px">Edit Deliverable</div>'
+    +'<div style="font-size:.78rem;color:#aaa;margin-bottom:18px">Goal '+goalN+' · '+g.t+'</div>'
+    +'<div style="margin-bottom:12px"><label style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:4px">Title</label>'
+    +'<input id="ed-title" value="'+d.t+'" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.9rem;outline:none"></div>'
+    +'<div style="margin-bottom:20px"><label style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:8px">Color</label>'
+    +'<div style="display:flex;gap:10px">'+swatchHtml+'</div></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end">'
+    +'<button id="ed-delete" style="padding:8px 18px;border-radius:6px;border:1.5px solid #ffcccc;background:none;color:#c0392b;font-family:var(--fb);font-size:.82rem;cursor:pointer;margin-right:auto">Delete</button>'
+    +'<button id="ed-cancel" style="padding:8px 18px;border-radius:6px;border:1.5px solid #ddd;background:none;font-family:var(--fb);font-size:.82rem;cursor:pointer">Cancel</button>'
+    +'<button id="ed-save" style="padding:8px 18px;border-radius:6px;border:none;background:var(--t);color:#fff;font-family:var(--fb);font-size:.82rem;font-weight:600;cursor:pointer">Save</button>'
+    +'</div>';
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  var selectedColor = colorOptions.indexOf(d.c) >= 0 ? colorOptions.indexOf(d.c) : 0;
+  window.selEDC = function(i){
+    document.getElementById('edc-swatch-'+selectedColor).style.border = '3px solid transparent';
+    selectedColor = i;
+    document.getElementById('edc-swatch-'+i).style.border = '3px solid #333';
+  };
+
+  var inp = document.getElementById('ed-title');
+  inp.focus(); inp.select();
+  inp.addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('ed-save').click(); if(e.key==='Escape') overlay.remove(); });
+
+  document.getElementById('ed-cancel').onclick = function(){ overlay.remove(); };
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+
+  document.getElementById('ed-save').onclick = function(){
+    var title = inp.value.trim();
+    if(!title){ inp.style.borderColor='#e55'; return; }
+    d.t = title;
+    d.c = colorOptions[selectedColor];
+    overlay.remove();
+    renderPlan();
+    showToast('Deliverable updated');
+  };
+
+  document.getElementById('ed-delete').onclick = function(){
+    if(!confirm('Delete "'+d.t+'" and all its tasks?')) return;
+    g.delivs = g.delivs.filter(function(x){ return x.t !== delivTitle; });
+    overlay.remove();
+    renderPlan();
+    showToast('Deliverable deleted');
+  };
+}
+
 // Add Deliverable modal
 function openAddDeliverable(goalN){
   var g = MD.find(g=>g.n===goalN);
@@ -1453,7 +1517,7 @@ function openAddDeliverable(goalN){
   // Build shade options from goal color
   var shades = [g.c, g.l ? shadeColor(g.c, -15) : g.c, shadeColor(g.c, -30)];
   var swatchHtml = [g.c, shadeColor(g.c,-15), shadeColor(g.c,-30)].map(function(col,i){
-    return '<div onclick="selectDelColor('+i+')" id="dc-swatch-'+i+'" style="width:22px;height:22px;border-radius:50%;background:'+col+';cursor:pointer;border:3px solid '+(i===0?'#333':'transparent')+';transition:border .15s"></div>';
+    return '<div onclick="selADC('+i+')" id="adc-swatch-'+i+'" style="width:22px;height:22px;border-radius:50%;background:'+col+';cursor:pointer;border:3px solid '+(i===0?'#333':'transparent')+';transition:border .15s"></div>';
   }).join('');
 
   var overlay = document.createElement('div');
@@ -1485,11 +1549,10 @@ function openAddDeliverable(goalN){
 
   var selectedColor = 0;
   var colorOptions = [g.c, shadeColor(g.c,-15), shadeColor(g.c,-30)];
-
-  window.selectDelColor = function(i){
-    document.getElementById('dc-swatch-'+selectedColor).style.border = '3px solid transparent';
+  window.selADC = function(i){
+    document.getElementById('adc-swatch-'+selectedColor).style.border = '3px solid transparent';
     selectedColor = i;
-    document.getElementById('dc-swatch-'+i).style.border = '3px solid #333';
+    document.getElementById('adc-swatch-'+i).style.border = '3px solid #333';
   };
 
   document.getElementById('ad-cancel').onclick = function(){ overlay.remove(); };
@@ -1882,6 +1945,16 @@ async function init(){
 }
 
 init();
+
+// Delegated handler for deliverable edit buttons (avoids inline escaping issues)
+document.addEventListener('click', function(e){
+  var btn = e.target.closest('.dh-edit');
+  if(btn){
+    var gn = parseInt(btn.dataset.gn);
+    var dt = btn.dataset.dt;
+    openEditDeliverable(gn, dt);
+  }
+});
 </script>
 </body>
 </html>
