@@ -782,39 +782,8 @@ function renderWeeklyReview(){
   document.getElementById('week-label').textContent = formatWeekLabel(viewingWeek);
   document.getElementById('week-note').textContent = getWeekNote(viewingWeek);
 
-  // Count stats
-  var allTasks = [];
-  MD.forEach(function(g){ g.delivs.forEach(function(d){ d.tasks.forEach(function(t){ allTasks.push(t); }); }); });
-  var total = allTasks.filter(t=>!t.target || t.target!==undefined).length;
-  var cp = allTasks.filter(t=>t.s==='cp').length;
-  var ip = allTasks.filter(t=>t.s==='ip').length;
-  var pct = total>0 ? Math.round(cp/total*100) : 0;
-
-  document.getElementById('ws-total').textContent = total;
-  document.getElementById('ws-complete').textContent = cp;
-  document.getElementById('ws-inprog').textContent = ip;
-  document.getElementById('ws-pct').textContent = pct+'%';
-
-  // Summary strip
-  var sumBody = document.getElementById('sum-body');
-  var goalPills = MD.map(function(g){
-    var sc = SC.find(s=>s.gn===g.n);
-    var pill = '';
-    if(sc && sc.type==='cumulative'){
-      var latest = latestMonthValue(sc);
-      var pctG = sc.target > 0 ? Math.round(latest/sc.target*100) : 0;
-      pill = '<div class="gpill" style="background:'+g.l+'"><div class="gpill-d" style="background:'+g.c+'"></div><span class="gpill-l" style="color:'+g.d+'">Goal '+g.n+' · '+pctG+'%</span></div>';
-    } else if(sc && sc.type==='threshold'){
-      var latest2 = latestMonthValue(sc);
-      var met = latest2 >= sc.target;
-      pill = '<div class="gpill" style="background:'+g.l+'"><div class="gpill-d" style="background:'+g.c+'"></div><span class="gpill-l" style="color:'+g.d+'">'+'Goal '+g.n+' · '+(met?'On track':'Below target')+'</span></div>';
-    }
-    return pill;
-  }).join('');
-
-  sumBody.innerHTML = '<div class="sum-stat"><span class="sum-n">'+cp+'</span><span class="sum-t">of '+total+' tasks complete</span></div>'
-    +'<div class="sum-stat"><span class="sum-n" style="color:var(--t)">'+ip+'</span><span class="sum-t">deliverables in progress</span></div>'
-    +'<div class="sum-stat" style="border-right:none;padding-right:0;gap:6px">'+goalPills+'</div>';
+  // Count stats + summary strip
+  updateSummaryStrip();
 
   // Goal cards
   var container = document.getElementById('weekly-goals-container');
@@ -961,7 +930,7 @@ function renderPlan(){
       +'<span class="edit-meta-chip" onclick="editMeta('+g.n+')">Target: '+g.target+' '+g.label+'</span>'
       +'<span class="edit-meta-chip" onclick="editMeta('+g.n+')">Type: '+g.type+'</span>'
       +'</div></div>'
-      +'<div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-g btn-sm">Edit</button><button class="btn btn-g btn-sm">+ Quarterly Strategy</button></div></div>'
+      +'<div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-g btn-sm" onclick="openEditGoal('+g.n+')">Edit</button><button class="btn btn-g btn-sm" onclick="openAddStrategy('+g.n+')">+ Quarterly Strategy</button></div></div>'
       +'<div class="sb"><div class="sh">'
       +'<div style="display:flex;align-items:center;flex:1;min-width:0;gap:9px">'
       +'<span class="qb" style="background:'+g.l+';color:'+g.d+'">Q1</span>'
@@ -1142,6 +1111,52 @@ function updateTaskStatus(goalN, delivTitle, taskId, status){
   var taskObj = null;
   MD.forEach(function(g){ g.delivs.forEach(function(d){ d.tasks.forEach(function(t){ if(t.id===taskId) taskObj=t; }); }); });
   if(taskObj) saveTaskStatus(taskId, goalN, delivTitle, taskObj.t, status, null, '');
+  // Refresh summary counts
+  updateSummaryStrip();
+}
+
+function updateSummaryStrip(){
+  var allTasks = [];
+  MD.forEach(function(g){ g.delivs.forEach(function(d){ d.tasks.forEach(function(t){ allTasks.push(t); }); }); });
+  var total = allTasks.length;
+  var cp = allTasks.filter(function(t){ return t.s==='cp'; }).length;
+  var ip = allTasks.filter(function(t){ return t.s==='ip'; }).length;
+  var pct = total>0 ? Math.round(cp/total*100) : 0;
+  document.getElementById('ws-total').textContent = total;
+  document.getElementById('ws-complete').textContent = cp;
+  document.getElementById('ws-inprog').textContent = ip;
+  document.getElementById('ws-pct').textContent = pct+'%';
+
+  // Deliverables in progress = deliverables with at least one ip/cp task but not all cp
+  var delivIP = 0;
+  MD.forEach(function(g){ g.delivs.forEach(function(d){
+    if(d.standing) return;
+    var ts = d.tasks;
+    var hasSome = ts.some(function(t){ return t.s==='ip'||t.s==='cp'; });
+    var allDone = ts.length > 0 && ts.every(function(t){ return t.s==='cp'; });
+    if(hasSome && !allDone) delivIP++;
+  }); });
+  document.getElementById('ws-inprog').textContent = delivIP;
+
+  var sumBody = document.getElementById('sum-body');
+  if(!sumBody) return;
+  var goalPills = MD.map(function(g){
+    var sc = SC.find(s=>s.gn===g.n);
+    var pill = '';
+    if(sc && sc.type==='cumulative'){
+      var latest = latestMonthValue(sc);
+      var pctG = sc.target > 0 ? Math.round(latest/sc.target*100) : 0;
+      pill = '<div class="gpill" style="background:'+g.l+'"><div class="gpill-d" style="background:'+g.c+'"></div><span class="gpill-l" style="color:'+g.d+'">Goal '+g.n+' · '+pctG+'%</span></div>';
+    } else if(sc && sc.type==='threshold'){
+      var latest2 = latestMonthValue(sc);
+      var met = latest2 >= sc.target;
+      pill = '<div class="gpill" style="background:'+g.l+'"><div class="gpill-d" style="background:'+g.c+'"></div><span class="gpill-l" style="color:'+g.d+'">Goal '+g.n+' · '+(met?'On track':'Below target')+'</span></div>';
+    }
+    return pill;
+  }).join('');
+  sumBody.innerHTML = '<div class="sum-stat"><span class="sum-n">'+cp+'</span><span class="sum-t">of '+total+' tasks complete</span></div>'
+    +'<div class="sum-stat"><span class="sum-n" style="color:var(--t)">'+delivIP+'</span><span class="sum-t">deliverables in progress</span></div>'
+    +'<div class="sum-stat" style="border-right:none;padding-right:0;gap:6px">'+goalPills+'</div>';
 }
 
 function updRecurring(inp, taskId, target, goalN){
@@ -1360,6 +1375,73 @@ function openAddTask(goalN, delivTitle){
     overlay.remove();
     renderPlan();
     showToast('Task added');
+  };
+}
+
+// Edit Goal modal
+function openEditGoal(goalN){
+  var g = MD.find(g=>g.n===goalN);
+  if(!g) return;
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:12px;padding:28px;width:100%;max-width:400px;box-shadow:0 12px 48px rgba(0,0,0,.2)';
+  var types = ['cumulative','threshold','reduction','average','milestone','recurring'];
+  var typeOpts = types.map(function(t){ return '<option'+(t===g.type?' selected':'')+'>'+t+'</option>'; }).join('');
+  var fi = function(label,id,val){ return '<div style="margin-bottom:12px"><label style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:4px">'+label+'</label><input id="'+id+'" value="'+(val||'')+'" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.9rem;outline:none"></div>'; };
+  box.innerHTML = '<div style="font-family:var(--fd);font-size:1.1rem;color:var(--dt);margin-bottom:18px">Edit Goal '+(g.year||2026)+' · '+goalN+'</div>'
+    +fi('Goal Title','eg-title',g.t)
+    +fi('Target Number','eg-target',g.target)
+    +fi('Metric Label','eg-label',g.label)
+    +'<div style="margin-bottom:20px"><label style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:4px">Metric Type</label><select id="eg-type" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.9rem;outline:none">'+typeOpts+'</select></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end"><button id="eg-cancel" style="padding:8px 18px;border-radius:6px;border:1.5px solid #ddd;background:none;font-family:var(--fb);font-size:.82rem;cursor:pointer">Cancel</button><button id="eg-save" style="padding:8px 18px;border-radius:6px;border:none;background:var(--t);color:#fff;font-family:var(--fb);font-size:.82rem;font-weight:600;cursor:pointer">Save</button></div>';
+  overlay.appendChild(box); document.body.appendChild(overlay);
+  document.getElementById('eg-cancel').onclick = function(){ overlay.remove(); };
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+  document.getElementById('eg-save').onclick = function(){
+    var title = document.getElementById('eg-title').value.trim();
+    if(!title){ document.getElementById('eg-title').style.borderColor='#e55'; return; }
+    g.t = title;
+    g.target = parseFloat(document.getElementById('eg-target').value)||g.target;
+    g.label = document.getElementById('eg-label').value.trim()||g.label;
+    g.type = document.getElementById('eg-type').value;
+    var sc = SC.find(s=>s.gn===goalN);
+    if(sc){ sc.target=g.target; sc.type=g.type; sc.label=g.label; }
+    overlay.remove();
+    renderPlan(); renderScorecard();
+    showToast('Goal '+goalN+' updated');
+  };
+}
+
+// Add Quarterly Strategy modal
+function openAddStrategy(goalN){
+  var g = MD.find(g=>g.n===goalN);
+  if(!g) return;
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:12px;padding:28px;width:100%;max-width:400px;box-shadow:0 12px 48px rgba(0,0,0,.2)';
+  var quarters = ['Q1','Q2','Q3','Q4'];
+  var qOpts = quarters.map(function(q){ return '<option>'+q+'</option>'; }).join('');
+  box.innerHTML = '<div style="font-family:var(--fd);font-size:1.1rem;color:var(--dt);margin-bottom:6px">Add Quarterly Strategy</div>'
+    +'<div style="font-size:.78rem;color:#aaa;margin-bottom:18px">Goal '+goalN+' · '+g.t+'</div>'
+    +'<div style="margin-bottom:12px"><label style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:4px">Quarter</label><select id="qs-q" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.9rem;outline:none">'+qOpts+'</select></div>'
+    +'<div style="margin-bottom:20px"><label style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:4px">Strategy Statement</label><textarea id="qs-s" rows="3" placeholder="e.g. Focus on building inbound channels" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.9rem;outline:none;resize:vertical"></textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end"><button id="qs-cancel" style="padding:8px 18px;border-radius:6px;border:1.5px solid #ddd;background:none;font-family:var(--fb);font-size:.82rem;cursor:pointer">Cancel</button><button id="qs-save" style="padding:8px 18px;border-radius:6px;border:none;background:var(--t);color:#fff;font-family:var(--fb);font-size:.82rem;font-weight:600;cursor:pointer">Add</button></div>';
+  overlay.appendChild(box); document.body.appendChild(overlay);
+  document.getElementById('qs-cancel').onclick = function(){ overlay.remove(); };
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+  document.getElementById('qs-save').onclick = function(){
+    var strat = document.getElementById('qs-s').value.trim();
+    var q = document.getElementById('qs-q').value;
+    if(!strat){ document.getElementById('qs-s').style.borderColor='#e55'; return; }
+    // Store strategy by quarter — extend g with quarters object
+    if(!g.quarters) g.quarters = {};
+    g.quarters[q] = strat;
+    if(q==='Q1') g.s = strat; // keep Q1 as the default shown
+    overlay.remove();
+    renderPlan();
+    showToast(q+' strategy added');
   };
 }
 
