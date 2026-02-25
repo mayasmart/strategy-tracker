@@ -234,8 +234,8 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
   <span style="font-family:Georgia,serif;font-size:1.15rem;font-style:italic;color:#27A8AF;letter-spacing:.01em;opacity:.95;flex-shrink:0">Maya Smart</span>
   <nav>
     <button onclick="show('plan')" id="nb-plan">Plan</button>
-    <button onclick="show('map')" id="nb-map">Strategy Map</button>
-    <button onclick="show('weekly')" id="nb-weekly" class="active">Weekly Review</button>
+    <button onclick="show('map')" id="nb-map" class="active">Strategy Map</button>
+    <button onclick="show('weekly')" id="nb-weekly">Weekly Review</button>
     <button onclick="show('scorecard')" id="nb-scorecard">Scorecard</button>
   </nav>
   <div class="hdr-r">
@@ -1017,12 +1017,13 @@ function renderPlan(){
       var tasksHtml = '';
       if(isStanding){
         tasksHtml = d.tasks.map(function(t){
-          var hasTgt = t.target !== null && t.target !== undefined;
+          var taskType = t.type || ((t.target !== null && t.target !== undefined) ? 'count' : 'check');
+          var typeLabel = taskType === 'count'
+            ? '<span style="font-size:.68rem;color:#bbb;flex-shrink:0">'+(t.target ? '/ '+t.target+' / wk' : 'count')+'</span>'
+            : '<span style="font-size:.68rem;color:#bbb;flex-shrink:0">checkbox</span>';
           return '<div class="tr-p" style="padding-left:36px"><div class="tt-p">'+t.t+'</div>'
-            +'<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">'
-            +'<input type="number" min="0" placeholder="—" value="'+(t.count||'')+'" style="width:42px;text-align:center;padding:3px 5px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fd);font-size:.95rem;color:var(--dt);outline:none">'
-            +'<span style="font-size:.72rem;color:#aaa">'+(hasTgt ? '/ '+t.target+' target' : 'tracked')+'</span>'
-            +'</div><button class="btn-ic" onclick="openEditTask('+g.n+',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">✎</button></div>';
+            +typeLabel
+            +'<button class="btn-ic" onclick="openEditTask('+g.n+',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">✎</button></div>';
         }).join('');
       } else {
         tasksHtml = d.tasks.map(function(t){
@@ -2161,7 +2162,7 @@ async function init(){
       showLoading('Loading your strategy...');
       await Promise.all([loadPlanData(), loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
       hideLoading();
-      renderAll();
+      renderAll(); show('map');
       return;
     }
   }
@@ -2197,7 +2198,7 @@ async function init(){
         await Promise.all([loadPlanData(), loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
       }catch(e){ console.warn('Sheets load failed, using defaults', e); }
       hideLoading();
-      renderAll();
+      renderAll(); show('map');
       return;
     }
   }
