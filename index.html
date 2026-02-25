@@ -536,7 +536,7 @@ var MD = [
     s:'Develop scalable programs and a sales system to land new clients',
     delivs:[
       {c:'#27A8AF',t:'Pursue sales',standing:true,
-        tasks:[{id:'T1',t:'Requested calls',s:'ip',count:3,target:2,week:'2026-W09'},{id:'T2',t:'Held calls',s:'ns',count:0,target:1,week:'2026-W09'},{id:'T3',t:'Closed sales',s:'ns',count:null,target:null,week:'2026-W09'}]},
+        tasks:[{id:'T1',t:'Requested calls',s:'ip',count:3,target:2,week:'2026-W09',type:'count'},{id:'T2',t:'Held calls',s:'ns',count:0,target:1,week:'2026-W09',type:'count'},{id:'T3',t:'Closed sales',s:'ns',count:null,target:null,week:'2026-W09',type:'count'}]},
       {c:'#27A8AF',t:'Deliver FLL curriculum scripts to WI CAN',
         tasks:[{id:'T4',t:'Submit FLL Module 1 Scripts',s:'cp',week:'2026-W09'},{id:'T5',t:'Revise FLL 1.3',s:'ip',week:'2026-W09'},{id:'T6',t:'Draft FLL 1.4',s:'ns',week:'2026-W09'},{id:'T7',t:'Draft FLL 1.5',s:'ns',week:'2026-W09'}]},
       {c:'#1D7A80',t:'Complete LETRS Module 3',
@@ -950,24 +950,36 @@ function renderWeeklyReview(){
 }
 
 function renderStandingCard(d, g, isCurrent){
-  var t0 = d.tasks[0];
-  var t1 = d.tasks[1];
-  var t2 = d.tasks[2];
-
-  function recRow(t, tgt){
-    var wc = getWeekCount(t.id);
-    var v = (wc !== null && wc !== undefined) ? wc : 0;
-    var hasTgt = tgt !== null && tgt !== undefined;
-    var cls = hasTgt ? (v>=tgt ? 'over' : (v>0 ? 'under' : '')) : '';
-    var status = hasTgt ? (v>=tgt ? '<span class="rec-status over">\u2713 On target</span>' : (v>0 ? '<span class="rec-status under">\u2197 Below</span>' : '<span class="rec-status none">\u2014</span>')) : '';
+  function recRow(t){
+    var taskType = t.type || ((t.target !== null && t.target !== undefined) ? "count" : "check");
+    if(taskType === "count"){
+      var tgt = (t.target !== null && t.target !== undefined) ? t.target : null;
+      var wc = getWeekCount(t.id);
+      var v = (wc !== null && wc !== undefined) ? wc : 0;
+      var hasTgt = tgt !== null;
+      var cls = hasTgt ? (v>=tgt ? 'over' : (v>0 ? 'under' : '')) : '';
+      var status = hasTgt ? (v>=tgt ? '<span class="rec-status over">\u2713 On target</span>' : (v>0 ? '<span class="rec-status under">\u2197 Below</span>' : '<span class="rec-status none">\u2014</span>')) : '';
+      return '<div class="wtr" style="padding-left:28px">'
+        +'<div class="wck"></div><div class="wtt">'+t.t+'</div>'
+        +'<div class="rec-wrap">'
+        +'<input class="rec-inp'+(cls?' '+cls:'')+'" type="number" min="0" value="'+(v>0?v:'')+'" placeholder="\u2014"'
+        +' oninput="updRecurring(this,\''+t.id+'\','+(hasTgt?tgt:'null')+','+g.n+')">' 
+        +(hasTgt ? '<span class="rec-target">/ '+tgt+' target</span>' : '<span class="rec-target">this week</span>')
+        +(hasTgt ? status : '')
+        +'</div></div>';
+    }
+    var ws = getWeekStatus(t.id);
+    var ck = ws==='cp' ? ' cp' : ws==='ip' ? ' ip' : '';
+    var chk = ws==='cp' ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
     return '<div class="wtr" style="padding-left:28px">'
-      +'<div class="wck"></div><div class="wtt">'+t.t+'</div>'
-      +'<div class="rec-wrap">'
-      +'<input class="rec-inp'+(cls?' '+cls:'')+'" type="number" min="0" value="'+(v>0?v:'')+'" placeholder="\u2014"'
-      +' oninput="updRecurring(this,\''+t.id+'\','+(hasTgt?tgt:'null')+','+g.n+')">'
-      +(hasTgt ? '<span class="rec-target">/ '+tgt+' target</span>' : '<span class="rec-target">this week</span>')
-      +(hasTgt ? status : '')
-      +'</div></div>';
+      +'<div class="wck'+ck+'" onclick="toggleTask(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">'+ chk +'</div>'
+      +'<div class="wtt">'+t.t+'</div>'
+      +'<select class="sel '+ws+'" onchange="cSel(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">'
+      +'<option'+(ws==='ns'?' selected':'')+'>Not Started</option>'
+      +'<option'+(ws==='ip'?' selected':'')+'>In Progress</option>'
+      +'<option'+(ws==='cp'?' selected':'')+'>Complete</option>'
+      +'<option'+(ws==='oh'?' selected':'')+'>On Hold</option>'
+      +'</select></div>';
   }
 
   return '<div style="margin:0;border-bottom:1px solid var(--gr)">'
@@ -979,9 +991,7 @@ function renderStandingCard(d, g, isCurrent){
     +'<span style="margin-left:auto;font-size:.64rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--td);background:var(--mn);padding:2px 8px;border-radius:3px;flex-shrink:0">Standing</span>'
     +'</div></div>'
     +'<div style="background:var(--wh);padding:4px 0 6px">'
-    +recRow(t0, t0.target)
-    +recRow(t1, t1.target)
-    +recRow(t2, null)
+    +d.tasks.map(recRow).join('')
     +'</div></div>';
 }
 // ═══════════════════════════════════════════════════════════
@@ -1070,12 +1080,23 @@ function renderMap(month,q){
     var tc=isFeb
       ? g.delivs.map(function(d,i){
           var rows=d.tasks.map(function(t){
-            if(t.target !== undefined && t.target !== null) {
-              var chipStyle, chipText;
-              if(t.count===null||t.count===undefined){chipStyle='background:#eee;color:#888';chipText='— tracked';}
-              else if(t.count>=t.target){chipStyle='background:#D6F0E0;color:#1A7A4A';chipText=t.count+' / '+t.target+' ✓';}
-              else{chipStyle='background:#FFF3CD;color:#7D5A00';chipText=t.count+' / '+t.target+' ↗';}
-              return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+chipStyle+'">'+chipText+'</span></div>';
+            if(d.standing){
+              var taskType = t.type || ((t.target !== null && t.target !== undefined) ? 'count' : 'check');
+              if(taskType === 'count'){
+                var wc = getWeekCount(t.id);
+                var hasTgt = t.target !== null && t.target !== undefined;
+                var chipStyle, chipText;
+                if(!hasTgt){ chipStyle='background:#eee;color:#888'; chipText=(wc>0?wc:'—')+' this week'; }
+                else if(!wc||wc===0){chipStyle='background:#eee;color:#888';chipText='— / '+t.target;}
+                else if(wc>=t.target){chipStyle='background:#D6F0E0;color:#1A7A4A';chipText=wc+' / '+t.target+' ✓';}
+                else{chipStyle='background:#FFF3CD;color:#7D5A00';chipText=wc+' / '+t.target+' ↗';}
+                return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+chipStyle+'">'+chipText+'</span></div>';
+              }
+              // check-type standing task — show status chip
+              var ws2=getWeekStatus(t.id);
+              var cm2={ns:'background:#e8e8e8;color:#555',ip:'background:#FFF3CD;color:#7D5A00',cp:'background:#D6F0E0;color:#1A7A4A',oh:'background:#FFE4E4;color:#b22222'};
+              var cl2={ns:'Not Started',ip:'In Progress',cp:'Complete',oh:'On Hold'};
+              return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+(cm2[ws2]||cm2.ns)+'">'+(cl2[ws2]||'Not Started')+'</span></div>';
             }
             var cm={ns:'background:#e8e8e8;color:#555',ip:'background:#FFF3CD;color:#7D5A00',cp:'background:#D6F0E0;color:#1A7A4A',oh:'background:#FFE4E4;color:#b22222'};
             var cl={ns:'Not Started',ip:'In Progress',cp:'Complete',oh:'On Hold'};
@@ -1690,25 +1711,34 @@ function openAddStandingDeliverable(goalN){
   var overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px';
   var box = document.createElement('div');
-  box.style.cssText = 'background:#fff;border-radius:12px;padding:28px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,.2)';
+  box.style.cssText = 'background:#fff;border-radius:12px;padding:28px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,.2)';
 
-  var taskRows = [{name:'',target:''}];
+  var taskRows = [{name:'', type:'check', target:''}];
+
+  window.asdToggleType = function(i){ saveInputs(); taskRows[i].type = taskRows[i].type==='check' ? 'count' : 'check'; render(); };
+  window.asdRemoveRow = function(i){ saveInputs(); taskRows.splice(i,1); render(); };
+
+  function renderTaskRow(tr, i){
+    var isCount = tr.type === 'count';
+    var toggleBtn = '<button onclick="asdToggleType('+i+')" style="display:flex;align-items:center;gap:4px;padding:5px 9px;border:1.5px solid '+(isCount?'var(--t)':'#ddd')+';border-radius:6px;background:'+(isCount?'var(--t)':'#fff')+';color:'+(isCount?'#fff':'#aaa')+';font-family:var(--fb);font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">'+(isCount?'# Count':'\u2713 Check')+'</button>';
+    var extraInput = isCount
+      ? '<input class="asd-task-target" data-i="'+i+'" placeholder="Target" value="'+tr.target+'" type="number" min="0" style="width:64px;padding:7px 8px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.88rem;outline:none;text-align:center"><span style="font-size:.7rem;color:#aaa;white-space:nowrap">/ wk</span>'
+      : '';
+    return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">'
+      +'<input class="asd-task-name" data-i="'+i+'" placeholder="Task name" value="'+tr.name+'" style="flex:1;min-width:0;padding:7px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.88rem;outline:none">'
+      +toggleBtn
+      +extraInput
+      +(taskRows.length > 1 ? '<button onclick="asdRemoveRow('+i+')" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:1rem;padding:2px 4px;flex-shrink:0">\u2715</button>' : '')
+      +'</div>';
+  }
 
   function render(){
-    var taskHtml = taskRows.map(function(tr, i){
-      return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">'
-        +'<input class="asd-task-name" data-i="'+i+'" placeholder="Task name" value="'+tr.name+'" style="flex:1;padding:7px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.88rem;outline:none">'
-        +'<input class="asd-task-target" data-i="'+i+'" placeholder="Target" value="'+tr.target+'" type="number" min="0" style="width:70px;padding:7px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.88rem;outline:none;text-align:center">'
-        +'<span style="font-size:.7rem;color:#aaa;white-space:nowrap">/ week</span>'
-        +(taskRows.length > 1 ? '<button onclick="asdRemoveRow('+i+')" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:1rem;padding:2px 4px">✕</button>' : '')
-        +'</div>';
-    }).join('');
-
+    var taskHtml = taskRows.map(renderTaskRow).join('');
     box.innerHTML = '<div style="font-family:var(--fd);font-size:1.1rem;color:var(--dt);margin-bottom:4px">Add Standing Deliverable</div>'
-      +'<div style="font-size:.78rem;color:#aaa;margin-bottom:18px">Goal '+goalN+' · '+g.t+'</div>'
+      +'<div style="font-size:.78rem;color:#aaa;margin-bottom:18px">Goal '+goalN+' \u00b7 '+g.t+'</div>'
       +'<div style="margin-bottom:14px"><label style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:4px">Deliverable Name</label>'
-      +'<input id="asd-name" placeholder="e.g. Pursue sales" value="'+(box._name||'')+'" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.9rem;outline:none"></div>'
-      +'<div style="margin-bottom:8px"><label style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:4px">Recurring Tasks <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#bbb">— leave target blank to just track</span></label>'
+      +'<input id="asd-name" placeholder="e.g. Review expenses" value="'+(box._name||'')+'" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.9rem;outline:none"></div>'
+      +'<div style="margin-bottom:8px"><label style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:4px">Tasks \u2014 toggle \u2713 Check or # Count per task</label>'
       +taskHtml+'</div>'
       +'<button id="asd-add-row" style="background:none;border:1.5px dashed #ddd;border-radius:6px;padding:6px 14px;font-family:var(--fb);font-size:.82rem;color:#aaa;cursor:pointer;width:100%;margin-bottom:20px">+ Add task</button>'
       +'<div style="display:flex;gap:8px;justify-content:flex-end">'
@@ -1716,18 +1746,12 @@ function openAddStandingDeliverable(goalN){
       +'<button id="asd-save" style="padding:8px 18px;border-radius:6px;border:none;background:var(--t);color:#fff;font-family:var(--fb);font-size:.82rem;font-weight:600;cursor:pointer">Add</button>'
       +'</div>';
 
-    // Wire events
     document.getElementById('asd-name').oninput = function(){ box._name = this.value; };
-    document.getElementById('asd-add-row').onclick = function(){ saveInputs(); taskRows.push({name:'',target:''}); render(); setTimeout(function(){ var els=box.querySelectorAll('.asd-task-name'); els[els.length-1].focus(); },50); };
+    document.getElementById('asd-add-row').onclick = function(){ saveInputs(); taskRows.push({name:'',type:'check',target:''}); render(); setTimeout(function(){ var els=box.querySelectorAll('.asd-task-name'); els[els.length-1].focus(); },50); };
     document.getElementById('asd-cancel').onclick = function(){ overlay.remove(); };
     document.getElementById('asd-save').onclick = save;
-
-    box.querySelectorAll('.asd-task-name').forEach(function(el){
-      el.oninput = function(){ taskRows[parseInt(this.dataset.i)].name = this.value; };
-    });
-    box.querySelectorAll('.asd-task-target').forEach(function(el){
-      el.oninput = function(){ taskRows[parseInt(this.dataset.i)].target = this.value; };
-    });
+    box.querySelectorAll('.asd-task-name').forEach(function(el){ el.oninput = function(){ taskRows[parseInt(this.dataset.i)].name = this.value; }; });
+    box.querySelectorAll('.asd-task-target').forEach(function(el){ el.oninput = function(){ taskRows[parseInt(this.dataset.i)].target = this.value; }; });
   }
 
   function saveInputs(){
@@ -1737,16 +1761,14 @@ function openAddStandingDeliverable(goalN){
     box.querySelectorAll('.asd-task-target').forEach(function(el){ taskRows[parseInt(el.dataset.i)].target = el.value; });
   }
 
-  window.asdRemoveRow = function(i){ saveInputs(); taskRows.splice(i,1); render(); };
-
   function save(){
     saveInputs();
     var title = (box._name||'').trim();
     var nameEl = document.getElementById('asd-name');
     if(!title){ if(nameEl) nameEl.style.borderColor='#e55'; return; }
     var tasks = taskRows.filter(function(tr){ return tr.name.trim(); }).map(function(tr){
-      var tgt = tr.target !== '' ? parseInt(tr.target)||null : null;
-      return { id:'T'+Date.now()+Math.random().toString(36).slice(2,6), t:tr.name.trim(), s:'ns', count:null, target:tgt };
+      var tgt = (tr.type==='count' && tr.target !== '') ? parseInt(tr.target)||null : null;
+      return { id:'T'+Date.now()+Math.random().toString(36).slice(2,6), t:tr.name.trim(), s:'ns', type:tr.type, count:null, target:tgt };
     });
     if(tasks.length === 0){ showToast('Add at least one task'); return; }
     g.delivs.unshift({ c:g.c, t:title, standing:true, tasks:tasks });
@@ -1762,6 +1784,7 @@ function openAddStandingDeliverable(goalN){
   render();
   setTimeout(function(){ var el=document.getElementById('asd-name'); if(el) el.focus(); }, 50);
 }
+
 
 // Add Deliverable modal
 function openAddDeliverable(goalN){
