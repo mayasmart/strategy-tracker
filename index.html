@@ -50,6 +50,7 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
 .btn-g{background:none;border:1.5px solid var(--mn);color:var(--dt)}.btn-g:hover{border-color:var(--t);background:var(--tl)}
 .btn-sm{padding:3px 10px;font-size:.73rem}
 .btn-ic{background:none;border:none;cursor:pointer;color:#ccc;padding:2px 4px;border-radius:3px;font-size:.85rem}.btn-ic:hover{color:var(--ch)}
+.roll-btn{background:none;border:1.5px solid #ddd;border-radius:4px;padding:1px 7px;font-size:.78rem;color:#aaa;cursor:pointer;flex-shrink:0;transition:all .15s;line-height:1.6}.roll-btn:hover{background:var(--t);border-color:var(--t);color:#fff}
 .wk-badge{display:inline-flex;align-items:center;font-size:.68rem;font-weight:600;color:#888;background:#f0f0f0;border-radius:4px;padding:2px 7px;cursor:pointer;white-space:nowrap;flex-shrink:0;border:1px solid #e4e4e4;transition:background .15s}.wk-badge:hover{background:#e4e4e4;color:var(--t)}.wk-badge.past{color:#c0392b;background:#fdf0ee;border-color:#f5c6c0}
 .dot-xl{width:14px;height:14px;border-radius:50%;flex-shrink:0}
 .dot-lg{width:11px;height:11px;border-radius:50%;flex-shrink:0}
@@ -277,7 +278,7 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
     <span class="mb-lbl">Viewing</span>
     <div class="qg"><span class="ql" style="background:var(--tl);color:var(--td)">Q1</span>
       <button class="mp" onclick="selM(this,'January','Q1')">January</button>
-      <button class="mp hd active" onclick="selM(this,'February','Q1')">February</button>
+      <button class="mp" onclick="selM(this,'February','Q1')">February</button>
       <button class="mp" onclick="selM(this,'March','Q1')">March</button>
     </div>
     <div class="qdiv"></div>
@@ -304,7 +305,7 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
       <thead><tr>
         <th style="width:15%">2026 Goal</th>
         <th style="width:19%" id="th-q">Q1 Strategy</th>
-        <th style="width:24%" id="th-d">February Deliverables</th>
+        <th style="width:24%" id="th-d">Deliverables</th>
         <th>This Week's Tasks</th>
       </tr></thead>
       <tbody id="map-tbody"></tbody>
@@ -570,6 +571,9 @@ var SC = [
 
 // Week state
 var CURRENT_WEEK_ISO = getISOWeek(new Date());
+var _now = new Date();
+var CURRENT_MONTH_NAME = ['January','February','March','April','May','June','July','August','September','October','November','December'][_now.getMonth()];
+var CURRENT_QUARTER = 'Q'+Math.ceil((_now.getMonth()+1)/3);
 var viewingWeek = CURRENT_WEEK_ISO;
 var weekData = {}; // { 'YYYY-Wxx': { taskId: {status, count, notes} } }
 weekData[CURRENT_WEEK_ISO] = {}; // ensure current week always has an entry
@@ -923,14 +927,17 @@ function renderWeeklyReview(){
       }
       var weekTasks = d.tasks.filter(function(t){ return (t.week||CURRENT_WEEK_ISO) === viewingWeek; });
       if(weekTasks.length === 0) return '';
+      var isPastWeek = viewingWeek < CURRENT_WEEK_ISO;
       var tasksHtml = weekTasks.map(function(t){
         var ws = getWeekStatus(t.id);
         var ck = ws==='cp' ? ' cp' : ws==='ip' ? ' ip' : '';
         var chk = ws==='cp' ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
+        var rollBtn = (isPastWeek && ws !== 'cp') ? '<button class="roll-btn" onclick="rollTaskForward(\''+t.id+'\')" title="Copy to next week">&#8594;</button>' : '';
         return '<div class="wtr">'
           +'<div class="wck'+ck+'" onclick="toggleTask(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">'+chk+'</div>'
           +'<div class="wtt">'+t.t+'</div>'
-          +'<select class="sel '+ws+'" onchange="cSel(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">'          +'<option'+(ws==='ns'?' selected':'')+'>Not Started</option>'          +'<option'+(ws==='ip'?' selected':'')+'>In Progress</option>'          +'<option'+(ws==='cp'?' selected':'')+'>Complete</option>'          +'<option'+(ws==='oh'?' selected':'')+'>On Hold</option>'          +'</select></div>';
+          +rollBtn
+          +'<select class="sel '+ws+'" onchange="cSel(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">'+'<option'+(ws==='ns'?' selected':'')+'>Not Started</option>'+'<option'+(ws==='ip'?' selected':'')+'>In Progress</option>'+'<option'+(ws==='cp'?' selected':'')+'>Complete</option>'+'<option'+(ws==='oh'?' selected':'')+'>On Hold</option>'+'</select></div>';
       }).join('');
       return '<div class="wdg"><div class="wdh" style="border-left-color:'+d.c+'">'
         +'<div class="dot-lg" style="background:'+d.c+'"></div><div class="wdt">'+d.t+'</div></div>'
@@ -1076,8 +1083,17 @@ function weeksInMonth(monthName){
   var monthIdx=MONTH_NAMES.indexOf(monthName);
   if(monthIdx<0) return [];
   var year=new Date().getFullYear();
-  var weeks=[]; var d=new Date(year,monthIdx,1);
-  while(d.getMonth()===monthIdx){ var w=getISOWeek(d); if(weeks.indexOf(w)<0) weeks.push(w); d.setDate(d.getDate()+7); }
+  var weeks=[];
+  var d=new Date(year,monthIdx,1);
+  while(d.getMonth()===monthIdx){
+    var w=getISOWeek(d);
+    if(weeks.indexOf(w)<0){
+      // Assign week to the month its Monday falls in
+      var monday=isoWeekToMonday(w);
+      if(monday.getMonth()===monthIdx) weeks.push(w);
+    }
+    d.setDate(d.getDate()+1);
+  }
   return weeks;
 }
 function renderMap(month,q){
@@ -1206,8 +1222,8 @@ function renderScorecard(){
 function renderAll(){
   renderPlan();
   renderWeeklyReview();
-  renderMap('February','Q1');
   renderScorecard();
+  initMapToCurrentMonth();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1219,7 +1235,7 @@ function show(n){
     document.getElementById('view-'+v).classList.toggle('active',v===n);
     document.getElementById('nb-'+v).classList.toggle('active',v===n);
   });
-  if(n==='map') renderMap('February','Q1');
+  if(n==='map') renderMap(CURRENT_MONTH_NAME, CURRENT_QUARTER);
 }
 
 function cSel(s, goalN, delivTitle, taskId){
@@ -1396,11 +1412,38 @@ function updateScorecardNotes(ta, goalN, month){
 }
 
 function selM(btn, month, q){
-  document.querySelectorAll('.mp').forEach(function(p){p.classList.remove('active');});
-  btn.classList.add('active');
+  document.querySelectorAll('.mp').forEach(function(p){p.classList.remove('active','hd');});
+  btn.classList.add('active','hd');
   document.getElementById('th-q').textContent=q+' Strategy';
   document.getElementById('th-d').textContent=month+' Deliverables';
   renderMap(month,q);
+}
+
+function initMapToCurrentMonth(){
+  // Find the button matching the current month and activate it
+  document.querySelectorAll('.mp').forEach(function(btn){
+    if(btn.textContent.trim() === CURRENT_MONTH_NAME){
+      btn.click();
+    }
+  });
+}
+
+function rollTaskForward(taskId){
+  // Find the task in MD
+  var taskObj=null, delivTitle='', goalN=null;
+  MD.forEach(function(g){ g.delivs.forEach(function(d){ d.tasks.forEach(function(t){
+    if(t.id===taskId){ taskObj=t; delivTitle=d.t; goalN=g.n; }
+  }); }); });
+  if(!taskObj) return;
+  var nextWeek = shiftWeekISO(viewingWeek, 1);
+  // Clone the task with a new ID scheduled for next week, status reset to ns
+  var newTask = { id:'T'+Date.now()+Math.random().toString(36).slice(2,5), t:taskObj.t, s:'ns', week:nextWeek };
+  // Add to same deliverable
+  MD.forEach(function(g){ if(g.n!==goalN) return; g.delivs.forEach(function(d){
+    if(d.t===delivTitle) d.tasks.push(newTask);
+  }); });
+  renderAll(); savePlan();
+  showToast('Task copied to '+weekBadgeLabel(nextWeek));
 }
 
 function shiftWeek(delta){
