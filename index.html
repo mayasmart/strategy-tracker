@@ -1365,7 +1365,7 @@ function editStrategy(id){
     // Update in-memory and save
     var gn = parseInt(id.replace('s','').replace('-obj',''));
     var g = MD.find(g=>g.n===gn);
-    if(g){ g.s=span.textContent; queueSave('Strategy!B'+gn, [[span.textContent]]); savePlan(); }
+    if(g){ g.s=span.textContent; savePlan(); renderMap(document.querySelector('.mp.active')?.dataset?.month||'February','Q1'); }
   }
   inp.addEventListener('blur',save);
   inp.addEventListener('keydown',function(e){if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=cur;inp.blur();}});
@@ -1411,14 +1411,14 @@ function openEditTask(goalN, delivTitle, taskId){
     if(!title){ inp.style.borderColor='#e55'; return; }
     t.t = title;
     overlay.remove();
-    renderPlan(); savePlan();
+    renderAll(); savePlan();
     showToast('Task updated');
   };
 
   document.getElementById('et-delete').onclick = function(){
     d.tasks = d.tasks.filter(function(tk){ return tk.id !== taskId; });
     overlay.remove();
-    renderPlan(); savePlan();
+    renderAll(); savePlan();
     showToast('Task deleted');
   };
 }
@@ -1460,7 +1460,7 @@ function openAddTask(goalN, delivTitle){
     var newId = 'T'+Date.now();
     d.tasks.push({ id: newId, t: title, s: 'ns' });
     overlay.remove();
-    renderPlan(); savePlan();
+    renderAll(); savePlan();
     showToast('Task added');
   };
 }
@@ -1495,7 +1495,7 @@ function openEditGoal(goalN){
     var sc = SC.find(s=>s.gn===goalN);
     if(sc){ sc.target=g.target; sc.type=g.type; sc.label=g.label; }
     overlay.remove();
-    renderPlan(); renderScorecard(); savePlan();
+    renderAll(); savePlan();
     showToast('Goal '+goalN+' updated');
   };
 }
@@ -1527,7 +1527,7 @@ function openAddStrategy(goalN){
     g.quarters[q] = strat;
     if(q==='Q1') g.s = strat; // keep Q1 as the default shown
     overlay.remove();
-    renderPlan(); savePlan();
+    renderAll(); savePlan();
     showToast(q+' strategy added');
   };
 }
@@ -1584,7 +1584,7 @@ function openEditDeliverable(goalN, delivTitle){
     d.t = title;
     d.c = colorOptions[selectedColor];
     overlay.remove();
-    renderPlan(); savePlan();
+    renderAll(); savePlan();
     showToast('Deliverable updated');
   };
 
@@ -1592,7 +1592,7 @@ function openEditDeliverable(goalN, delivTitle){
     if(!confirm('Delete "'+d.t+'" and all its tasks?')) return;
     g.delivs = g.delivs.filter(function(x){ return x.t !== delivTitle; });
     overlay.remove();
-    renderPlan(); savePlan();
+    renderAll(); savePlan();
     showToast('Deliverable deleted');
   };
 }
@@ -1654,7 +1654,7 @@ function openAddDeliverable(goalN){
     var newId = 'T'+(Date.now());
     g.delivs.push({ c: col, t: title, month: month, tasks: [] });
     overlay.remove();
-    renderPlan(); savePlan();
+    renderAll(); savePlan();
     showToast('Deliverable added to Goal '+goalN);
   };
 }
@@ -1751,7 +1751,7 @@ function openAddGoal(){
     MD.push(newGoal);
     SC.push({gn: nextN, color: pal.c, gl: pal.l, type: type, label: label, target: target, months: {}, notes: {}});
     overlay.remove();
-    renderPlan(); renderScorecard(); savePlan();
+    renderAll(); savePlan();
     showToast('Goal '+nextN+' added');
   };
 }
@@ -1786,7 +1786,7 @@ function editMeta(goalN){
     var sc=SC.find(s=>s.gn===goalN);
     if(sc){sc.target=g.target;sc.type=g.type;sc.label=g.label;}
     overlay.remove();
-    renderPlan();renderScorecard(); savePlan();
+    renderAll(); savePlan();
     showToast('Goal '+goalN+' metrics updated');
   };
   overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
