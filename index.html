@@ -1047,7 +1047,8 @@ function renderPlan(){
       +'<span class="qb" style="background:'+g.l+';color:'+g.d+'">Q1</span>'
       +'<span class="so" id="s'+g.n+'-obj" onclick="editStrategy(\'s'+g.n+'-obj\')">'+g.s+'</span></div>'
       +'<button class="btn btn-ic" onclick="editStrategy(\'s'+g.n+'-obj\')">✎</button>'
-      +'<button class="btn btn-g btn-sm" style="flex-shrink:0" onclick="openAddDeliverable('+g.n+')">+ Monthly Deliverable</button></div>'
+      +'<button class="btn btn-g btn-sm" style="flex-shrink:0" onclick="openAddDeliverable('+g.n+')">+ Monthly Deliverable</button>'
+      +'<button class="btn btn-g btn-sm" style="flex-shrink:0" onclick="openAddStandingDeliverable('+g.n+')">+ Standing Deliverable</button></div>'
       +delivsHtml+'</div></div>';
   }).join('');
     html += '</div></div>';
@@ -1679,6 +1680,87 @@ function openEditDeliverable(goalN, delivTitle){
     renderAll(); savePlan();
     showToast('Deliverable deleted');
   };
+}
+
+// Add Standing Deliverable modal
+function openAddStandingDeliverable(goalN){
+  var g = MD.find(g=>g.n===goalN);
+  if(!g) return;
+
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:12px;padding:28px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,.2)';
+
+  var taskRows = [{name:'',target:''}];
+
+  function render(){
+    var taskHtml = taskRows.map(function(tr, i){
+      return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">'
+        +'<input class="asd-task-name" data-i="'+i+'" placeholder="Task name" value="'+tr.name+'" style="flex:1;padding:7px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.88rem;outline:none">'
+        +'<input class="asd-task-target" data-i="'+i+'" placeholder="Target" value="'+tr.target+'" type="number" min="0" style="width:70px;padding:7px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.88rem;outline:none;text-align:center">'
+        +'<span style="font-size:.7rem;color:#aaa;white-space:nowrap">/ week</span>'
+        +(taskRows.length > 1 ? '<button onclick="asdRemoveRow('+i+')" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:1rem;padding:2px 4px">✕</button>' : '')
+        +'</div>';
+    }).join('');
+
+    box.innerHTML = '<div style="font-family:var(--fd);font-size:1.1rem;color:var(--dt);margin-bottom:4px">Add Standing Deliverable</div>'
+      +'<div style="font-size:.78rem;color:#aaa;margin-bottom:18px">Goal '+goalN+' · '+g.t+'</div>'
+      +'<div style="margin-bottom:14px"><label style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:4px">Deliverable Name</label>'
+      +'<input id="asd-name" placeholder="e.g. Pursue sales" value="'+(box._name||'')+'" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.9rem;outline:none"></div>'
+      +'<div style="margin-bottom:8px"><label style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:4px">Recurring Tasks <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#bbb">— leave target blank to just track</span></label>'
+      +taskHtml+'</div>'
+      +'<button id="asd-add-row" style="background:none;border:1.5px dashed #ddd;border-radius:6px;padding:6px 14px;font-family:var(--fb);font-size:.82rem;color:#aaa;cursor:pointer;width:100%;margin-bottom:20px">+ Add task</button>'
+      +'<div style="display:flex;gap:8px;justify-content:flex-end">'
+      +'<button id="asd-cancel" style="padding:8px 18px;border-radius:6px;border:1.5px solid #ddd;background:none;font-family:var(--fb);font-size:.82rem;cursor:pointer">Cancel</button>'
+      +'<button id="asd-save" style="padding:8px 18px;border-radius:6px;border:none;background:var(--t);color:#fff;font-family:var(--fb);font-size:.82rem;font-weight:600;cursor:pointer">Add</button>'
+      +'</div>';
+
+    // Wire events
+    document.getElementById('asd-name').oninput = function(){ box._name = this.value; };
+    document.getElementById('asd-add-row').onclick = function(){ saveInputs(); taskRows.push({name:'',target:''}); render(); setTimeout(function(){ var els=box.querySelectorAll('.asd-task-name'); els[els.length-1].focus(); },50); };
+    document.getElementById('asd-cancel').onclick = function(){ overlay.remove(); };
+    document.getElementById('asd-save').onclick = save;
+
+    box.querySelectorAll('.asd-task-name').forEach(function(el){
+      el.oninput = function(){ taskRows[parseInt(this.dataset.i)].name = this.value; };
+    });
+    box.querySelectorAll('.asd-task-target').forEach(function(el){
+      el.oninput = function(){ taskRows[parseInt(this.dataset.i)].target = this.value; };
+    });
+  }
+
+  function saveInputs(){
+    var nameEl = document.getElementById('asd-name');
+    if(nameEl) box._name = nameEl.value;
+    box.querySelectorAll('.asd-task-name').forEach(function(el){ taskRows[parseInt(el.dataset.i)].name = el.value; });
+    box.querySelectorAll('.asd-task-target').forEach(function(el){ taskRows[parseInt(el.dataset.i)].target = el.value; });
+  }
+
+  window.asdRemoveRow = function(i){ saveInputs(); taskRows.splice(i,1); render(); };
+
+  function save(){
+    saveInputs();
+    var title = (box._name||'').trim();
+    var nameEl = document.getElementById('asd-name');
+    if(!title){ if(nameEl) nameEl.style.borderColor='#e55'; return; }
+    var tasks = taskRows.filter(function(tr){ return tr.name.trim(); }).map(function(tr){
+      var tgt = tr.target !== '' ? parseInt(tr.target)||null : null;
+      return { id:'T'+Date.now()+Math.random().toString(36).slice(2,6), t:tr.name.trim(), s:'ns', count:null, target:tgt };
+    });
+    if(tasks.length === 0){ showToast('Add at least one task'); return; }
+    g.delivs.unshift({ c:g.c, t:title, standing:true, tasks:tasks });
+    overlay.remove();
+    renderAll(); savePlan();
+    showToast('Standing deliverable added');
+  }
+
+  box._name = '';
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+  render();
+  setTimeout(function(){ var el=document.getElementById('asd-name'); if(el) el.focus(); }, 50);
 }
 
 // Add Deliverable modal
