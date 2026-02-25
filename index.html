@@ -652,6 +652,7 @@ async function syncFromSheets(){
   if(!isSignedIn()){showToast('Sign in to sync'); return;}
   showLoading('Loading from Google Sheets...');
   try{
+    await loadPlanData();
     await loadWeeklyData(viewingWeek);
     await loadSalesData();
     await loadScorecardData();
@@ -772,8 +773,93 @@ function saveScorecardVal(goalN, month, value, notes){
 }
 
 // ═══════════════════════════════════════════════════════════
-// RENDER — WEEKLY REVIEW
+// PLAN SAVE / LOAD
 // ═══════════════════════════════════════════════════════════
+// Sheet: Plan tab
+// Columns: GoalN | GoalYear | GoalTitle | GoalColor | GoalLight | GoalDark |
+//          GoalTarget | GoalType | GoalLabel | GoalStrategy | GoalQuarters(JSON) |
+//          DelivTitle | DelivColor | DelivStanding |
+//          TaskID | TaskTitle | TaskStatus | TaskCount | TaskTarget
+
+function savePlan(){
+  if(!isSignedIn()) return;
+  var rows = [['GoalN','GoalYear','GoalTitle','GoalColor','GoalLight','GoalDark','GoalTarget','GoalType','GoalLabel','GoalStrategy','GoalQuarters','DelivTitle','DelivColor','DelivStanding','TaskID','TaskTitle','TaskStatus','TaskCount','TaskTarget']];
+  MD.forEach(function(g){
+    if(!g.delivs || g.delivs.length === 0){
+      // Goal with no deliverables — still write one row
+      rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), '', '', '', '', '', '', '', '']);
+      return;
+    }
+    g.delivs.forEach(function(d){
+      if(!d.tasks || d.tasks.length === 0){
+        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', '', '', '', '', '']);
+        return;
+      }
+      d.tasks.forEach(function(t){
+        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', t.id, t.t, t.s||'ns', t.count!==null&&t.count!==undefined?t.count:'', t.target!==null&&t.target!==undefined?t.target:'']);
+      });
+    });
+  });
+  // Write entire Plan sheet — clear then rewrite
+  queueSave('Plan!A1:S'+rows.length, rows);
+}
+
+async function loadPlanData(){
+  if(!isSignedIn()) return;
+  try{
+    var data = await sheetsGet(SHEET_ID, 'Plan!A:S');
+    var rows = data.values || [];
+    if(rows.length < 2) return; // no data yet
+    var newMD = [];
+    rows.forEach(function(row, ri){
+      if(ri === 0) return; // header
+      var gn = parseInt(row[0]); if(isNaN(gn)) return;
+      var g = newMD.find(function(x){ return x.n===gn; });
+      if(!g){
+        g = {
+          n: gn,
+          year: parseInt(row[1])||2026,
+          t: row[2]||'',
+          c: row[3]||'#27A8AF',
+          l: row[4]||'#E6F6F7',
+          d: row[5]||'#005A5E',
+          target: parseFloat(row[6])||0,
+          type: row[7]||'cumulative',
+          label: row[8]||'',
+          s: row[9]||'',
+          quarters: {},
+          delivs: []
+        };
+        try{ g.quarters = JSON.parse(row[10]||'{}'); }catch(e){}
+        newMD.push(g);
+      }
+      var delivTitle = row[11]||'';
+      if(!delivTitle) return;
+      var delivColor = row[12]||g.c;
+      var isStanding = row[13]==='1';
+      var d = g.delivs.find(function(x){ return x.t===delivTitle; });
+      if(!d){
+        d = { t: delivTitle, c: delivColor, standing: isStanding||undefined, tasks: [] };
+        if(!isStanding) delete d.standing;
+        g.delivs.push(d);
+      }
+      var taskId = row[14]||'';
+      if(!taskId) return;
+      var tcount = row[17]!==''&&row[17]!==undefined ? parseInt(row[17])||0 : null;
+      var ttarget = row[18]!==''&&row[18]!==undefined ? parseInt(row[18]) : null;
+      d.tasks.push({
+        id: taskId,
+        t: row[15]||'',
+        s: row[16]||'ns',
+        count: tcount,
+        target: ttarget
+      });
+    });
+    if(newMD.length > 0) MD = newMD;
+  }catch(e){ console.warn('Could not load plan data', e); }
+}
+
+
 function renderWeeklyReview(){
   // Update header
   var monday = isoWeekToMonday(viewingWeek);
@@ -1110,6 +1196,8 @@ function updateTaskStatus(goalN, delivTitle, taskId, status){
   var taskObj = null;
   MD.forEach(function(g){ g.delivs.forEach(function(d){ d.tasks.forEach(function(t){ if(t.id===taskId) taskObj=t; }); }); });
   if(taskObj) saveTaskStatus(taskId, goalN, delivTitle, taskObj.t, status, null, '');
+  // Also persist task status change to Plan sheet
+  savePlan();
   // Refresh summary counts
   updateSummaryStrip();
 }
@@ -1277,7 +1365,7 @@ function editStrategy(id){
     // Update in-memory and save
     var gn = parseInt(id.replace('s','').replace('-obj',''));
     var g = MD.find(g=>g.n===gn);
-    if(g){ g.s=span.textContent; queueSave('Strategy!B'+gn, [[span.textContent]]); }
+    if(g){ g.s=span.textContent; queueSave('Strategy!B'+gn, [[span.textContent]]); savePlan(); }
   }
   inp.addEventListener('blur',save);
   inp.addEventListener('keydown',function(e){if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=cur;inp.blur();}});
@@ -1323,14 +1411,14 @@ function openEditTask(goalN, delivTitle, taskId){
     if(!title){ inp.style.borderColor='#e55'; return; }
     t.t = title;
     overlay.remove();
-    renderPlan();
+    renderPlan(); savePlan();
     showToast('Task updated');
   };
 
   document.getElementById('et-delete').onclick = function(){
     d.tasks = d.tasks.filter(function(tk){ return tk.id !== taskId; });
     overlay.remove();
-    renderPlan();
+    renderPlan(); savePlan();
     showToast('Task deleted');
   };
 }
@@ -1372,7 +1460,7 @@ function openAddTask(goalN, delivTitle){
     var newId = 'T'+Date.now();
     d.tasks.push({ id: newId, t: title, s: 'ns' });
     overlay.remove();
-    renderPlan();
+    renderPlan(); savePlan();
     showToast('Task added');
   };
 }
@@ -1407,7 +1495,7 @@ function openEditGoal(goalN){
     var sc = SC.find(s=>s.gn===goalN);
     if(sc){ sc.target=g.target; sc.type=g.type; sc.label=g.label; }
     overlay.remove();
-    renderPlan(); renderScorecard();
+    renderPlan(); renderScorecard(); savePlan();
     showToast('Goal '+goalN+' updated');
   };
 }
@@ -1439,7 +1527,7 @@ function openAddStrategy(goalN){
     g.quarters[q] = strat;
     if(q==='Q1') g.s = strat; // keep Q1 as the default shown
     overlay.remove();
-    renderPlan();
+    renderPlan(); savePlan();
     showToast(q+' strategy added');
   };
 }
@@ -1496,7 +1584,7 @@ function openEditDeliverable(goalN, delivTitle){
     d.t = title;
     d.c = colorOptions[selectedColor];
     overlay.remove();
-    renderPlan();
+    renderPlan(); savePlan();
     showToast('Deliverable updated');
   };
 
@@ -1504,7 +1592,7 @@ function openEditDeliverable(goalN, delivTitle){
     if(!confirm('Delete "'+d.t+'" and all its tasks?')) return;
     g.delivs = g.delivs.filter(function(x){ return x.t !== delivTitle; });
     overlay.remove();
-    renderPlan();
+    renderPlan(); savePlan();
     showToast('Deliverable deleted');
   };
 }
@@ -1566,7 +1654,7 @@ function openAddDeliverable(goalN){
     var newId = 'T'+(Date.now());
     g.delivs.push({ c: col, t: title, month: month, tasks: [] });
     overlay.remove();
-    renderPlan();
+    renderPlan(); savePlan();
     showToast('Deliverable added to Goal '+goalN);
   };
 }
@@ -1663,8 +1751,7 @@ function openAddGoal(){
     MD.push(newGoal);
     SC.push({gn: nextN, color: pal.c, gl: pal.l, type: type, label: label, target: target, months: {}, notes: {}});
     overlay.remove();
-    renderPlan();
-    renderScorecard();
+    renderPlan(); renderScorecard(); savePlan();
     showToast('Goal '+nextN+' added');
   };
 }
@@ -1699,7 +1786,7 @@ function editMeta(goalN){
     var sc=SC.find(s=>s.gn===goalN);
     if(sc){sc.target=g.target;sc.type=g.type;sc.label=g.label;}
     overlay.remove();
-    renderPlan();renderScorecard();
+    renderPlan();renderScorecard(); savePlan();
     showToast('Goal '+goalN+' metrics updated');
   };
   overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
@@ -1883,7 +1970,7 @@ async function init(){
       document.getElementById('app').style.display = '';
       updateAuthUI(true);
       showLoading('Loading your strategy...');
-      await Promise.all([loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
+      await Promise.all([loadPlanData(), loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
       hideLoading();
       renderAll();
       return;
@@ -1901,7 +1988,7 @@ async function init(){
     updateAuthUI(true);
     showLoading('Loading your strategy...');
     try{
-      await Promise.all([loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
+      await Promise.all([loadPlanData(), loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
     }catch(e){ console.warn('Sheets load failed, using defaults', e); }
     hideLoading();
     renderAll();
@@ -1918,7 +2005,7 @@ async function init(){
       updateAuthUI(true);
       showLoading('Loading your strategy...');
       try{
-        await Promise.all([loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
+        await Promise.all([loadPlanData(), loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
       }catch(e){ console.warn('Sheets load failed, using defaults', e); }
       hideLoading();
       renderAll();
