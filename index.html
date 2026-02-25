@@ -1071,40 +1071,54 @@ function renderPlan(){
 // RENDER — STRATEGY MAP
 // ═══════════════════════════════════════════════════════════
 var SL={ns:'Not Started',ip:'In Progress',cp:'Complete',oh:'On Hold'};
+var MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function weeksInMonth(monthName){
+  var monthIdx=MONTH_NAMES.indexOf(monthName);
+  if(monthIdx<0) return [];
+  var year=new Date().getFullYear();
+  var weeks=[]; var d=new Date(year,monthIdx,1);
+  while(d.getMonth()===monthIdx){ var w=getISOWeek(d); if(weeks.indexOf(w)<0) weeks.push(w); d.setDate(d.getDate()+7); }
+  return weeks;
+}
 function renderMap(month,q){
   var tbody=document.getElementById('map-tbody');
-  var isFeb=month==='February';
+  var monthWeeks=weeksInMonth(month);
+  var cm={ns:'background:#e8e8e8;color:#555',ip:'background:#FFF3CD;color:#7D5A00',cp:'background:#D6F0E0;color:#1A7A4A',oh:'background:#FFE4E4;color:#b22222'};
+  var cl={ns:'Not Started',ip:'In Progress',cp:'Complete',oh:'On Hold'};
+
+  function taskChip(t,d){
+    if(d.standing){
+      var tt=t.type||((t.target!==null&&t.target!==undefined)?'count':'check');
+      if(tt==='count'){
+        var wc=getWeekCount(t.id); var hasTgt=t.target!==null&&t.target!==undefined;
+        var cs,ct;
+        if(!hasTgt){cs='background:#eee;color:#888';ct=(wc>0?wc:'\u2014')+' this week';}
+        else if(!wc||wc===0){cs='background:#eee;color:#888';ct='\u2014 / '+t.target;}
+        else if(wc>=t.target){cs='background:#D6F0E0;color:#1A7A4A';ct=wc+' / '+t.target+' \u2713';}
+        else{cs='background:#FFF3CD;color:#7D5A00';ct=wc+' / '+t.target+' \u2197';}
+        return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+cs+'">'+ct+'</span></div>';
+      }
+      var ws2=getWeekStatus(t.id);
+      return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+(cm[ws2]||cm.ns)+'">'+(cl[ws2]||'Not Started')+'</span></div>';
+    }
+    var ws=getWeekStatus(t.id);
+    return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+(cm[ws]||cm.ns)+'">'+(cl[ws]||'Not Started')+'</span></div>';
+  }
+
   tbody.innerHTML=MD.map(function(g){
-    var dc=isFeb
-      ? g.delivs.map(function(d){return '<div class="map-di"><div class="dot-lg" style="background:'+d.c+';flex-shrink:0"></div><div class="map-dt2">'+d.t+(d.standing?' <span style="font-size:.6rem;font-weight:700;color:var(--td);background:var(--mn);padding:1px 5px;border-radius:3px">Standing</span>':'')+'</div></div>';}).join('')
+    var visDelivs=g.delivs.filter(function(d){
+      if(d.standing) return true;
+      return d.tasks.some(function(t){ return monthWeeks.indexOf(t.week||CURRENT_WEEK_ISO)>=0; });
+    });
+    var dc=visDelivs.length
+      ? visDelivs.map(function(d){return '<div class="map-di"><div class="dot-lg" style="background:'+d.c+';flex-shrink:0"></div><div class="map-dt2">'+d.t+(d.standing?' <span style="font-size:.6rem;font-weight:700;color:var(--td);background:var(--mn);padding:1px 5px;border-radius:3px">Standing</span>':'')+'</div></div>';}).join('')
       : '<div class="no-data">No '+month+' deliverables yet</div>';
-    var tc=isFeb
-      ? g.delivs.map(function(d,i){
-          var rows=d.tasks.map(function(t){
-            if(d.standing){
-              var taskType = t.type || ((t.target !== null && t.target !== undefined) ? 'count' : 'check');
-              if(taskType === 'count'){
-                var wc = getWeekCount(t.id);
-                var hasTgt = t.target !== null && t.target !== undefined;
-                var chipStyle, chipText;
-                if(!hasTgt){ chipStyle='background:#eee;color:#888'; chipText=(wc>0?wc:'—')+' this week'; }
-                else if(!wc||wc===0){chipStyle='background:#eee;color:#888';chipText='— / '+t.target;}
-                else if(wc>=t.target){chipStyle='background:#D6F0E0;color:#1A7A4A';chipText=wc+' / '+t.target+' ✓';}
-                else{chipStyle='background:#FFF3CD;color:#7D5A00';chipText=wc+' / '+t.target+' ↗';}
-                return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+chipStyle+'">'+chipText+'</span></div>';
-              }
-              // check-type standing task — show status chip
-              var ws2=getWeekStatus(t.id);
-              var cm2={ns:'background:#e8e8e8;color:#555',ip:'background:#FFF3CD;color:#7D5A00',cp:'background:#D6F0E0;color:#1A7A4A',oh:'background:#FFE4E4;color:#b22222'};
-              var cl2={ns:'Not Started',ip:'In Progress',cp:'Complete',oh:'On Hold'};
-              return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+(cm2[ws2]||cm2.ns)+'">'+(cl2[ws2]||'Not Started')+'</span></div>';
-            }
-            var cm={ns:'background:#e8e8e8;color:#555',ip:'background:#FFF3CD;color:#7D5A00',cp:'background:#D6F0E0;color:#1A7A4A',oh:'background:#FFE4E4;color:#b22222'};
-            var cl={ns:'Not Started',ip:'In Progress',cp:'Complete',oh:'On Hold'};
-            var ws=getWeekStatus(t.id);
-            return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+(cm[ws]||cm.ns)+'">'+(cl[ws]||'Not Started')+'</span></div>';
-          }).join('');
-          var div=i<g.delivs.length-1?'<div class="map-tdiv"></div>':'';
+    var tc=visDelivs.length
+      ? visDelivs.map(function(d,i){
+          var ts=d.standing?d.tasks:d.tasks.filter(function(t){return monthWeeks.indexOf(t.week||CURRENT_WEEK_ISO)>=0;});
+          var rows=ts.map(function(t){return taskChip(t,d);}).join('');
+          if(!rows) return '';
+          var div=i<visDelivs.length-1?'<div class="map-tdiv"></div>':'';
           return rows+div;
         }).join('')
       : '<div class="no-data">No '+month+' tasks yet</div>';
