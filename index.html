@@ -508,6 +508,16 @@ async function sheetsUpdate(sheetId, range, values){
   return resp.json();
 }
 
+async function sheetsClear(sheetId, range){
+  var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+encodeURIComponent(range)+':clear';
+  var resp = await fetch(url,{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'}
+  });
+  if(resp.status===401){ if(await refreshToken()) return sheetsClear(sheetId,range); throw new Error('Unauthorized'); }
+  return resp.json();
+}
+
 async function sheetsBatchGet(sheetId, ranges){
   var q = ranges.map(r=>'ranges='+encodeURIComponent(r)).join('&');
   var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values:batchGet?'+q;
@@ -665,6 +675,11 @@ async function flushSave(){
   pendingChanges = {};
   try{
     for(var range in toSave){
+      // Clear the full sheet tab first to remove stale rows beyond new data
+      if(range.startsWith('Plan!') || range.startsWith('Weekly Review!')){
+        var tabName = range.split('!')[0];
+        await sheetsClear(SHEET_ID, tabName+'!A2:ZZ');
+      }
       await sheetsUpdate(SHEET_ID, range, toSave[range]);
     }
     showSaveIndicator('saved');
