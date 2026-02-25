@@ -413,92 +413,45 @@ function isSignedIn(){
   return accessToken && tokenExpiry && Date.now() < tokenExpiry;
 }
 
-function generateCodeVerifier(){
-  var arr = new Uint8Array(64);
-  crypto.getRandomValues(arr);
-  return btoa(String.fromCharCode.apply(null, arr)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-}
-
-async function generateCodeChallenge(verifier){
-  var data = new TextEncoder().encode(verifier);
-  var digest = await crypto.subtle.digest('SHA-256', data);
-  return btoa(String.fromCharCode.apply(null, new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-}
-
 async function signIn(){
-  var verifier = generateCodeVerifier();
-  var challenge = await generateCodeChallenge(verifier);
-  sessionStorage.setItem('pkce_verifier', verifier);
   var params = new URLSearchParams({
     client_id: CLIENT_ID,
     redirect_uri: REDIRECT_URI,
-    response_type: 'code',
+    response_type: 'token',
     scope: SCOPES,
-    code_challenge: challenge,
-    code_challenge_method: 'S256',
-    access_type: 'offline',
     prompt: 'consent'
   });
   window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
 }
 
 async function handleOAuthCallback(){
-  var params = new URLSearchParams(window.location.search);
-  var code = params.get('code');
-  if(!code) return false;
-  var verifier = sessionStorage.getItem('pkce_verifier');
-  if(!verifier) return false;
+  // Implicit flow returns token in URL hash fragment
+  var hash = window.location.hash.substring(1);
+  if(!hash) return false;
+  var params = new URLSearchParams(hash);
+  var token = params.get('access_token');
+  var expiresIn = params.get('expires_in');
+  if(!token) return false;
   showLoading('Signing in...');
-  try{
-    var resp = await fetch('https://oauth2.googleapis.com/token',{
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({
-        client_id: CLIENT_ID,
-        code: code,
-        redirect_uri: REDIRECT_URI,
-        grant_type: 'authorization_code',
-        code_verifier: verifier
-      })
-    });
-    var data = await resp.json();
-    if(data.access_token){
-      accessToken = data.access_token;
-      tokenExpiry = Date.now() + (data.expires_in||3600)*1000;
-      if(data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token);
-      localStorage.setItem('access_token', accessToken);
-      localStorage.setItem('token_expiry', tokenExpiry);
-      window.history.replaceState({}, '', window.location.pathname);
-      sessionStorage.removeItem('pkce_verifier');
-      return true;
-    }
-  }catch(e){ console.error(e); }
-  hideLoading();
-  return false;
+  accessToken = token;
+  tokenExpiry = Date.now() + (parseInt(expiresIn)||3600)*1000;
+  localStorage.setItem('access_token', accessToken);
+  localStorage.setItem('token_expiry', tokenExpiry);
+  // Clean URL
+  window.history.replaceState({}, '', window.location.pathname);
+  return true;
 }
 
 async function refreshToken(){
-  var rt = localStorage.getItem('refresh_token');
-  if(!rt) return false;
-  try{
-    var resp = await fetch('https://oauth2.googleapis.com/token',{
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({
-        client_id: CLIENT_ID,
-        refresh_token: rt,
-        grant_type: 'refresh_token'
-      })
-    });
-    var data = await resp.json();
-    if(data.access_token){
-      accessToken = data.access_token;
-      tokenExpiry = Date.now() + (data.expires_in||3600)*1000;
-      localStorage.setItem('access_token', accessToken);
-      localStorage.setItem('token_expiry', tokenExpiry);
-      return true;
-    }
-  }catch(e){ console.error(e); }
+  // Implicit flow has no refresh token — re-prompt silently
+  var params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    redirect_uri: REDIRECT_URI,
+    response_type: 'token',
+    scope: SCOPES,
+    prompt: 'none'
+  });
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
   return false;
 }
 
@@ -1505,9 +1458,9 @@ function showToast(msg, isError){
 // INIT
 // ═══════════════════════════════════════════════════════════
 async function init(){
-  // Check for OAuth callback
-  var params = new URLSearchParams(window.location.search);
-  if(params.get('code')){
+  // Check for OAuth callback (implicit flow returns token in hash fragment)
+  var hash = window.location.hash.substring(1);
+  if(hash && new URLSearchParams(hash).get('access_token')){
     var ok = await handleOAuthCallback();
     if(ok){
       document.getElementById('auth-screen').style.display = 'none';
