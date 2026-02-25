@@ -257,7 +257,6 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
     <div><div class="pg-title">Plan</div><div class="pg-sub">Annual goals · quarterly strategies · monthly deliverables · weekly tasks</div></div>
     <div style="display:flex;gap:8px;align-items:center">
       <button class="btn btn-g btn-sm" onclick="openAddGoal()">+ Add Goal</button>
-      <button class="btn btn-g btn-sm" onclick="syncFromSheets()">↻ Sync</button>
     </div>
   </div>
   <div id="plan-goals-container"><div style="text-align:center;padding:48px;color:#ccc;font-size:.9rem">Loading...</div></div>
@@ -360,7 +359,6 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
   <div class="pg-hdr">
     <div><div class="pg-title">2026 Scorecard</div><div class="pg-sub">Monthly progress toward your annual goals</div></div>
     <div style="display:flex;gap:8px;align-items:center">
-      <button class="btn btn-g btn-sm" onclick="syncFromSheets()">↻ Sync</button>
     </div>
   </div>
   <div class="sc-grid" id="scorecard-container">
@@ -632,50 +630,50 @@ function getWeekNote(isoWeek){
 // ═══════════════════════════════════════════════════════════
 var saveTimer = null;
 var pendingChanges = {}; // {range: values}
+var isSaving = false;
 
 function queueSave(range, values){
+  if(!isSignedIn()) return;
   pendingChanges[range] = values;
-  document.getElementById('save-indicator').textContent = 'Unsaved changes';
-  document.getElementById('save-indicator').className = 'save-indicator saving';
+  showSaveIndicator('pending');
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(flushSave, 1500);
+  // 150ms debounce — batches rapid keystrokes but feels instant
+  saveTimer = setTimeout(flushSave, 150);
+}
+
+function showSaveIndicator(state){
+  var el = document.getElementById('save-indicator');
+  if(!el) return;
+  if(state === 'pending'){ el.textContent = 'Saving…'; el.className = 'save-indicator saving'; }
+  else if(state === 'saved'){ el.textContent = 'Saved ✓'; el.className = 'save-indicator saved'; setTimeout(function(){ el.textContent=''; el.className='save-indicator'; }, 2000); }
+  else if(state === 'error'){ el.textContent = 'Save failed'; el.className = 'save-indicator error'; }
 }
 
 async function flushSave(){
   if(!isSignedIn() || Object.keys(pendingChanges).length === 0) return;
-  var indicator = document.getElementById('save-indicator');
-  indicator.textContent = 'Saving…';
-  indicator.className = 'save-indicator saving';
+  if(isSaving){
+    // Already saving — reschedule to run after current save finishes
+    saveTimer = setTimeout(flushSave, 200);
+    return;
+  }
+  isSaving = true;
+  var toSave = Object.assign({}, pendingChanges);
+  pendingChanges = {};
   try{
-    for(var range in pendingChanges){
-      await sheetsUpdate(SHEET_ID, range, pendingChanges[range]);
+    for(var range in toSave){
+      await sheetsUpdate(SHEET_ID, range, toSave[range]);
     }
-    pendingChanges = {};
-    indicator.textContent = 'Saved ✓';
-    indicator.className = 'save-indicator saved';
-    setTimeout(()=>{ indicator.textContent=''; indicator.className='save-indicator'; }, 3000);
+    showSaveIndicator('saved');
   }catch(e){
-    indicator.textContent = 'Save failed';
-    indicator.className = 'save-indicator error';
+    // Put failed changes back so they retry
+    Object.assign(pendingChanges, toSave);
+    showSaveIndicator('error');
     showToast('Could not save to Google Sheets', true);
   }
-}
-
-async function syncFromSheets(){
-  if(!isSignedIn()){showToast('Sign in to sync'); return;}
-  showLoading('Loading from Google Sheets...');
-  try{
-    await loadPlanData();
-    await loadWeeklyData(viewingWeek);
-    await loadSalesData();
-    await loadScorecardData();
-    renderAll();
-    hideLoading();
-    showToast('Synced from Google Sheets');
-  }catch(e){
-    hideLoading();
-    showToast('Sync failed — using local data', true);
-    renderAll();
+  isSaving = false;
+  // If more changes queued while we were saving, flush them now
+  if(Object.keys(pendingChanges).length > 0){
+    saveTimer = setTimeout(flushSave, 150);
   }
 }
 
