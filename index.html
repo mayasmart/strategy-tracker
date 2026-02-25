@@ -573,6 +573,7 @@ var SC = [
 var CURRENT_WEEK_ISO = getISOWeek(new Date());
 var viewingWeek = CURRENT_WEEK_ISO;
 var weekData = {}; // { 'YYYY-Wxx': { taskId: {status, count, notes} } }
+weekData[CURRENT_WEEK_ISO] = {}; // ensure current week always has an entry
 
 // ═══════════════════════════════════════════════════════════
 // DATE / WEEK UTILITIES
@@ -894,17 +895,13 @@ function renderWeeklyReview(){
         return renderStandingCard(d, g, isCurrent);
       }
       var tasksHtml = d.tasks.map(function(t){
-        var ck = t.s==='cp' ? ' cp' : t.s==='ip' ? ' ip' : '';
-        var chk = t.s==='cp' ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
+        var ws = getWeekStatus(t.id);
+        var ck = ws==='cp' ? ' cp' : ws==='ip' ? ' ip' : '';
+        var chk = ws==='cp' ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
         return '<div class="wtr">'
           +'<div class="wck'+ck+'" onclick="toggleTask(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">'+chk+'</div>'
           +'<div class="wtt">'+t.t+'</div>'
-          +'<select class="sel '+t.s+'" onchange="cSel(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">'
-          +'<option'+(t.s==='ns'?' selected':'')+'>'+'Not Started'+'</option>'
-          +'<option'+(t.s==='ip'?' selected':'')+'>'+'In Progress'+'</option>'
-          +'<option'+(t.s==='cp'?' selected':'')+'>'+'Complete'+'</option>'
-          +'<option'+(t.s==='oh'?' selected':'')+'>'+'On Hold'+'</option>'
-          +'</select></div>';
+          +'<select class="sel '+ws+'" onchange="cSel(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">'          +'<option'+(ws==='ns'?' selected':'')+'>Not Started</option>'          +'<option'+(ws==='ip'?' selected':'')+'>In Progress</option>'          +'<option'+(ws==='cp'?' selected':'')+'>Complete</option>'          +'<option'+(ws==='oh'?' selected':'')+'>On Hold</option>'          +'</select></div>';
       }).join('');
       return '<div class="wdg"><div class="wdh" style="border-left-color:'+d.c+'">'
         +'<div class="dot-lg" style="background:'+d.c+'"></div><div class="wdt">'+d.t+'</div></div>'
@@ -923,23 +920,20 @@ function renderWeeklyReview(){
 }
 
 function renderStandingCard(d, g, isCurrent){
-  var t0 = d.tasks[0]; // Requested calls
-  var t1 = d.tasks[1]; // Held calls
-  var t2 = d.tasks[2]; // Closed sales
+  var t0 = d.tasks[0];
+  var t1 = d.tasks[1];
+  var t2 = d.tasks[2];
 
   function recRow(t, tgt){
-    var v = t.count||0;
+    var wc = getWeekCount(t.id);
+    var v = (wc !== null && wc !== undefined) ? wc : 0;
     var hasTgt = tgt !== null && tgt !== undefined;
-    var cls = '';
-    var status = '';
-    if(hasTgt){
-      cls = v>=tgt ? 'over' : (v>0 ? 'under' : '');
-      status = v>=tgt ? '<span class="rec-status over">✓ On target</span>' : (v>0 ? '<span class="rec-status under">↗ Below</span>' : '<span class="rec-status none">—</span>');
-    }
+    var cls = hasTgt ? (v>=tgt ? 'over' : (v>0 ? 'under' : '')) : '';
+    var status = hasTgt ? (v>=tgt ? '<span class="rec-status over">\u2713 On target</span>' : (v>0 ? '<span class="rec-status under">\u2197 Below</span>' : '<span class="rec-status none">\u2014</span>')) : '';
     return '<div class="wtr" style="padding-left:28px">'
       +'<div class="wck"></div><div class="wtt">'+t.t+'</div>'
       +'<div class="rec-wrap">'
-      +'<input class="rec-inp'+(cls?' '+cls:'')+'" type="number" min="0" value="'+(t.count!==null&&t.count!==undefined?t.count:'')+'" placeholder="—"'
+      +'<input class="rec-inp'+(cls?' '+cls:'')+'" type="number" min="0" value="'+(v>0?v:'')+'" placeholder="\u2014"'
       +' oninput="updRecurring(this,\''+t.id+'\','+(hasTgt?tgt:'null')+','+g.n+')">'
       +(hasTgt ? '<span class="rec-target">/ '+tgt+' target</span>' : '<span class="rec-target">this week</span>')
       +(hasTgt ? status : '')
@@ -960,7 +954,6 @@ function renderStandingCard(d, g, isCurrent){
     +recRow(t2, null)
     +'</div></div>';
 }
-
 // ═══════════════════════════════════════════════════════════
 // RENDER — PLAN
 // ═══════════════════════════════════════════════════════════
@@ -1183,44 +1176,45 @@ function toggleTask(el, goalN, delivTitle, taskId){
 }
 
 function updateTaskStatus(goalN, delivTitle, taskId, status){
-  // Update in-memory MD
-  MD.forEach(function(g){
-    if(g.n != goalN) return;
-    g.delivs.forEach(function(d){
-      d.tasks.forEach(function(t){
-        if(t.id===taskId){ t.s=status; }
-      });
-    });
-  });
-  // Queue save
+  // Write to weekData (per-week) not MD (plan-level)
+  if(!weekData[viewingWeek]) weekData[viewingWeek] = {};
+  weekData[viewingWeek][taskId] = weekData[viewingWeek][taskId] || {};
+  weekData[viewingWeek][taskId].status = status;
+  // Queue save to Weekly Review sheet
   var taskObj = null;
   MD.forEach(function(g){ g.delivs.forEach(function(d){ d.tasks.forEach(function(t){ if(t.id===taskId) taskObj=t; }); }); });
-  if(taskObj) saveTaskStatus(taskId, goalN, delivTitle, taskObj.t, status, null, '');
-  // Also persist task status change to Plan sheet
-  savePlan();
+  if(taskObj) saveTaskStatus(taskId, goalN, delivTitle, taskObj.t, status, weekData[viewingWeek][taskId].count||null, '');
   // Refresh summary counts
   updateSummaryStrip();
 }
 
+function getWeekStatus(taskId){
+  var wd = weekData[viewingWeek];
+  return (wd && wd[taskId] && wd[taskId].status) ? wd[taskId].status : 'ns';
+}
+
+function getWeekCount(taskId){
+  var wd = weekData[viewingWeek];
+  return (wd && wd[taskId] && wd[taskId].count !== undefined && wd[taskId].count !== null) ? wd[taskId].count : null;
+}
+
 function updateSummaryStrip(){
   var allTasks = [];
-  MD.forEach(function(g){ g.delivs.forEach(function(d){ d.tasks.forEach(function(t){ allTasks.push(t); }); }); });
+  MD.forEach(function(g){ g.delivs.forEach(function(d){ if(!d.standing) d.tasks.forEach(function(t){ allTasks.push(t); }); }); });
   var total = allTasks.length;
-  var cp = allTasks.filter(function(t){ return t.s==='cp'; }).length;
-  var ip = allTasks.filter(function(t){ return t.s==='ip'; }).length;
+  var cp = allTasks.filter(function(t){ return getWeekStatus(t.id)==='cp'; }).length;
   var pct = total>0 ? Math.round(cp/total*100) : 0;
   document.getElementById('ws-total').textContent = total;
   document.getElementById('ws-complete').textContent = cp;
-  document.getElementById('ws-inprog').textContent = ip;
   document.getElementById('ws-pct').textContent = pct+'%';
 
-  // Deliverables in progress = deliverables with at least one ip/cp task but not all cp
+  // Deliverables in progress = at least one started task but not all complete
   var delivIP = 0;
   MD.forEach(function(g){ g.delivs.forEach(function(d){
     if(d.standing) return;
-    var ts = d.tasks;
-    var hasSome = ts.some(function(t){ return t.s==='ip'||t.s==='cp'; });
-    var allDone = ts.length > 0 && ts.every(function(t){ return t.s==='cp'; });
+    var statuses = d.tasks.map(function(t){ return getWeekStatus(t.id); });
+    var hasSome = statuses.some(function(s){ return s==='ip'||s==='cp'; });
+    var allDone = statuses.length > 0 && statuses.every(function(s){ return s==='cp'; });
     if(hasSome && !allDone) delivIP++;
   }); });
   document.getElementById('ws-inprog').textContent = delivIP;
@@ -1255,9 +1249,12 @@ function updRecurring(inp, taskId, target, goalN){
     if(v>=target){ inp.className='rec-inp over'; if(st){st.textContent=v===target?'On target':'Over';st.className='rec-status over';}}
     else{ inp.className='rec-inp under'; if(st){st.textContent='Below';st.className='rec-status under';}}
   }
-  // Update in-memory
-  MD.forEach(function(g){ g.delivs.forEach(function(d){ d.tasks.forEach(function(t){ if(t.id===taskId){ t.count=v; } }); }); });
-  queueSave('Weekly Review!A:I', [[viewingWeek, taskId, goalN, 'Pursue sales', inp.closest('.wtr')?.querySelector('.wtt')?.textContent||'', 'recurring', v, target||'', '']]);
+  // Write to weekData (per-week), not MD
+  if(!weekData[viewingWeek]) weekData[viewingWeek] = {};
+  weekData[viewingWeek][taskId] = weekData[viewingWeek][taskId] || {};
+  weekData[viewingWeek][taskId].count = v;
+  var taskTitle = inp.closest('.wtr')?.querySelector('.wtt')?.textContent||'';
+  queueSave('Weekly Review!A:I', [[viewingWeek, taskId, goalN, 'Pursue sales', taskTitle, 'recurring', v, target||'', '']]);
 }
 
 function updateScorecard(inp, goalN, month){
@@ -1338,6 +1335,8 @@ function selM(btn, month, q){
 
 function shiftWeek(delta){
   viewingWeek = shiftWeekISO(viewingWeek, delta);
+  // Initialize empty weekData for this week if not already loaded
+  if(!weekData[viewingWeek]) weekData[viewingWeek] = {};
   renderWeeklyReview();
   if(isSignedIn()) loadWeeklyData(viewingWeek).then(renderWeeklyReview);
 }
