@@ -684,16 +684,17 @@ async function loadWeeklyData(isoWeek){
     var data = await sheetsGet(SHEET_ID, 'Weekly Review!A:I');
     var rows = data.values || [];
     // Parse rows: [Week, TaskID, Goal#, Deliverable, Task, Status, RecurringCount, RecurringTarget, Notes]
-    weekData[isoWeek] = {};
+    // Load all weeks at once so navigation to past/future weeks works
     rows.forEach(function(row, i){
       if(i===0) return; // skip header
-      if(row[0] === isoWeek && row[1]){
-        weekData[isoWeek][row[1]] = {
-          status: row[5] || 'ns',
-          count: row[6] !== undefined ? parseInt(row[6]) || null : null,
-          notes: row[8] || ''
-        };
-      }
+      var wk = row[0]; var tid = row[1];
+      if(!wk || !tid) return;
+      if(!weekData[wk]) weekData[wk] = {};
+      weekData[wk][tid] = {
+        status: row[5] || 'ns',
+        count: row[6] !== undefined && row[6] !== '' ? parseInt(row[6]) || null : null,
+        notes: row[8] || ''
+      };
     });
   }catch(e){ console.warn('Could not load weekly data', e); }
 }
@@ -753,15 +754,30 @@ async function loadScorecardData(){
   }catch(e){ console.warn('Could not load scorecard data', e); }
 }
 
-// Save task status change to sheets
-function saveTaskStatus(taskId, goalN, delivTitle, taskTitle, status, count, notes){
+// Save all weekly task statuses as a full snapshot for the viewing week
+function saveWeeklyData(){
   if(!isSignedIn()) return;
-  // We'll batch-write: find existing row or append
-  // For simplicity, we track a pending change
-  var rowData = [[viewingWeek, taskId, goalN, delivTitle, taskTitle, status, count||'', '', notes||'']];
-  // This will be written via batchUpdate in a real impl
-  // For now use the queueSave mechanism with a special "append" operation
-  queueSave('Weekly Review!A:I', rowData); // simplified
+  // Collect all tasks across all weeks that have weekData entries
+  var rows = [['Week','TaskID','GoalN','Deliverable','Task','Status','RecurringCount','RecurringTarget','Notes']];
+  // Write all known week entries
+  Object.keys(weekData).forEach(function(wk){
+    var wd = weekData[wk];
+    Object.keys(wd).forEach(function(taskId){
+      var entry = wd[taskId];
+      // Find task info from MD
+      var taskObj = null, delivTitle = '', goalN = '';
+      MD.forEach(function(g){ g.delivs.forEach(function(d){ d.tasks.forEach(function(t){
+        if(t.id === taskId){ taskObj = t; delivTitle = d.t; goalN = g.n; }
+      }); }); });
+      if(!taskObj) return;
+      rows.push([wk, taskId, goalN, delivTitle, taskObj.t, entry.status||'ns', entry.count||'', '', entry.notes||'']);
+    });
+  });
+  queueSave('Weekly Review!A1:I'+rows.length, rows);
+}
+
+function saveTaskStatus(taskId, goalN, delivTitle, taskTitle, status, count, notes){
+  saveWeeklyData();
 }
 
 // Save scorecard value
@@ -1062,7 +1078,8 @@ function renderMap(month,q){
             }
             var cm={ns:'background:#e8e8e8;color:#555',ip:'background:#FFF3CD;color:#7D5A00',cp:'background:#D6F0E0;color:#1A7A4A',oh:'background:#FFE4E4;color:#b22222'};
             var cl={ns:'Not Started',ip:'In Progress',cp:'Complete',oh:'On Hold'};
-            return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+(cm[t.s]||cm.ns)+'">'+(cl[t.s]||'Not Started')+'</span></div>';
+            var ws=getWeekStatus(t.id);
+            return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+(cm[ws]||cm.ns)+'">'+(cl[ws]||'Not Started')+'</span></div>';
           }).join('');
           var div=i<g.delivs.length-1?'<div class="map-tdiv"></div>':'';
           return rows+div;
@@ -1270,8 +1287,7 @@ function updRecurring(inp, taskId, target, goalN){
   if(!weekData[viewingWeek]) weekData[viewingWeek] = {};
   weekData[viewingWeek][taskId] = weekData[viewingWeek][taskId] || {};
   weekData[viewingWeek][taskId].count = v;
-  var taskTitle = inp.closest('.wtr')?.querySelector('.wtt')?.textContent||'';
-  queueSave('Weekly Review!A:I', [[viewingWeek, taskId, goalN, 'Pursue sales', taskTitle, 'recurring', v, target||'', '']]);
+  saveWeeklyData();
 }
 
 function updateScorecard(inp, goalN, month){
@@ -1870,10 +1886,10 @@ function printWeeklyReview(){
   var monday = isoWeekToMonday(viewingWeek);
   var weekStr = monday.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   var allTasks = [];
-  MD.forEach(function(g){ g.delivs.forEach(function(d){ d.tasks.forEach(function(t){ allTasks.push({g,d,t}); }); }); });
-  var cp = allTasks.filter(x=>x.t.s==='cp').length;
-  var ip = allTasks.filter(x=>x.t.s==='ip').length;
-  var ns = allTasks.filter(x=>x.t.s==='ns').length;
+  MD.forEach(function(g){ g.delivs.forEach(function(d){ d.tasks.filter(function(t){ return (t.week||CURRENT_WEEK_ISO)===viewingWeek; }).forEach(function(t){ allTasks.push({g,d,t}); }); }); });
+  var cp = allTasks.filter(x=>getWeekStatus(x.t.id)==='cp').length;
+  var ip = allTasks.filter(x=>getWeekStatus(x.t.id)==='ip').length;
+  var ns = allTasks.filter(x=>getWeekStatus(x.t.id)==='ns').length;
   var total = allTasks.length;
 
   var statusLabel = {ns:'Not Started',ip:'In Progress',cp:'Complete',oh:'On Hold'};
@@ -1890,8 +1906,8 @@ function printWeeklyReview(){
             +'<td style="padding:5px 8px"><span style="font-size:9.5px;font-weight:600;padding:2px 7px;border-radius:10px;background:'+chipColor+'">'+chipTxt+'</span></td></tr>';
         }
         if(d.standing){ return '<tr><td style="padding:5px 8px;font-size:11px;color:#444">'+t.t+'</td><td style="padding:5px 8px"><span style="font-size:9.5px;color:#aaa">tracked</span></td></tr>'; }
-        return '<tr><td style="padding:5px 8px"><input type="checkbox" style="margin-right:6px"'+(t.s==='cp'?' checked':'')+'><span style="font-size:11px;color:#444'+(t.s==='cp'?';text-decoration:line-through;color:#999':'')+'">'+t.t+'</span></td>'
-          +'<td style="padding:5px 8px"><span style="font-size:9.5px;font-weight:600;padding:2px 7px;border-radius:4px;background:'+statusColor[t.s]+'">'+statusLabel[t.s]+'</span></td></tr>';
+        var ps=getWeekStatus(t.id); return '<tr><td style="padding:5px 8px"><input type="checkbox" style="margin-right:6px"'+(ps==='cp'?' checked':'')+'><span style="font-size:11px;color:#444'+(ps==='cp'?';text-decoration:line-through;color:#999':'')+'">'  +t.t+'</span></td>'
+          +'<td style="padding:5px 8px"><span style="font-size:9.5px;font-weight:600;padding:2px 7px;border-radius:4px;background:'+statusColor[ps]+'">'+statusLabel[ps]+'</span></td></tr>';
       }).join('');
       return '<div style="margin-bottom:2px">'
         +'<div style="padding:5px 8px;display:flex;align-items:center;gap:6px;background:#fafafa;border-left:3px solid '+d.c+';border-bottom:1px solid #f0f0f0">'
@@ -1968,7 +1984,7 @@ function printStrategyOverview(){
         return '<div style="display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:1px solid #f5f5f5">'
           +'<div style="width:6px;height:6px;border-radius:50%;background:'+d.c+';flex-shrink:0"></div>'
           +'<span style="font-size:9.5px;color:#444;flex:1">'+t.t+'</span>'
-          +'<span style="font-size:8.5px;font-weight:600;padding:1px 6px;border-radius:4px;'+statusColor[t.s]+'">'+statusLabel[t.s]+'</span></div>';
+          var ps2=getWeekStatus(t.id); +'<span style="font-size:8.5px;font-weight:600;padding:1px 6px;border-radius:4px;'+statusColor[ps2]+'">'+statusLabel[ps2]+'</span></div>';
       }).join('');
     }).join('');
 
