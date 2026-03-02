@@ -829,7 +829,7 @@ function saveScorecardVal(goalN, month, value, notes){
 
 function savePlan(){
   if(!isSignedIn()) return;
-  var rows = [['GoalN','GoalYear','GoalTitle','GoalColor','GoalLight','GoalDark','GoalTarget','GoalType','GoalLabel','GoalStrategy','GoalQuarters','DelivTitle','DelivColor','DelivStanding','TaskID','TaskTitle','TaskStatus','TaskCount','TaskTarget','TaskWeek']];
+  var rows = [['GoalN','GoalYear','GoalTitle','GoalColor','GoalLight','GoalDark','GoalTarget','GoalType','GoalLabel','GoalStrategy','GoalQuarters','DelivTitle','DelivColor','DelivStanding','TaskID','TaskTitle','TaskStatus','TaskCount','TaskTarget','TaskWeek','TaskType']];
   MD.forEach(function(g){
     if(!g.delivs || g.delivs.length === 0){
       // Goal with no deliverables — still write one row
@@ -842,18 +842,18 @@ function savePlan(){
         return;
       }
       d.tasks.forEach(function(t){
-        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', t.id, t.t, t.s||'ns', t.count!==null&&t.count!==undefined?t.count:'', t.target!==null&&t.target!==undefined?t.target:'', t.week||CURRENT_WEEK_ISO]);
+        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', t.id, t.t, t.s||'ns', t.count!==null&&t.count!==undefined?t.count:'', t.target!==null&&t.target!==undefined?t.target:'', t.week||CURRENT_WEEK_ISO, t.type||'']);
       });
     });
   });
   // Write entire Plan sheet — clear then rewrite
-  queueSave('Plan!A1:T'+rows.length, rows);
+  queueSave('Plan!A1:U'+rows.length, rows);
 }
 
 async function loadPlanData(){
   if(!isSignedIn()) return;
   try{
-    var data = await sheetsGet(SHEET_ID, 'Plan!A:T');
+    var data = await sheetsGet(SHEET_ID, 'Plan!A:U');
     var rows = data.values || [];
     if(rows.length < 2) return; // no data yet
     var newMD = [];
@@ -899,7 +899,8 @@ async function loadPlanData(){
         s: row[16]||'ns',
         count: tcount,
         target: ttarget,
-        week: row[19]||CURRENT_WEEK_ISO
+        week: row[19]||CURRENT_WEEK_ISO,
+        type: row[20]||undefined
       });
     });
     if(newMD.length > 0) MD = newMD;
