@@ -842,7 +842,7 @@ function savePlan(){
         return;
       }
       d.tasks.forEach(function(t){
-        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', t.id, t.t, t.s||'ns', t.count!==null&&t.count!==undefined?t.count:'', t.target!==null&&t.target!==undefined?t.target:'', t.week||CURRENT_WEEK_ISO, t.type||'']);
+        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', t.id, t.t, t.s||'ns', t.count!==null&&t.count!==undefined?t.count:'', t.target!==null&&t.target!==undefined?t.target:'', t.week||CURRENT_WEEK_ISO, t.type||(d.standing?(t.target!==null&&t.target!==undefined?'count':'check'):'')  ]);
       });
     });
   });
@@ -893,7 +893,7 @@ async function loadPlanData(){
       if(!taskId) return;
       var tcount = row[17]!==''&&row[17]!==undefined ? parseInt(row[17])||0 : null;
       var ttarget = row[18]!==''&&row[18]!==undefined ? parseInt(row[18]) : null;
-      var ttype = row[20] || (isStanding ? 'count' : undefined);
+      var ttype = row[20] || undefined;
       d.tasks.push({
         id: taskId,
         t: row[15]||'',
@@ -975,7 +975,7 @@ function renderWeeklyReview(){
 
 function renderStandingCard(d, g, isCurrent){
   function recRow(t){
-    var taskType = t.type || "count";
+    var taskType = t.type||(t.target!==null&&t.target!==undefined?"count":"check");
     if(taskType === "count"){
       var tgt = (t.target !== null && t.target !== undefined) ? t.target : null;
       var wc = getWeekCount(t.id);
@@ -1041,7 +1041,7 @@ function renderPlan(){
       var tasksHtml = '';
       if(isStanding){
         tasksHtml = d.tasks.map(function(t){
-          var taskType = t.type || 'count';
+          var taskType = t.type||(t.target!==null&&t.target!==undefined?'count':'check');
           var typeLabel = taskType === 'count'
             ? '<span style="font-size:.68rem;color:#bbb;flex-shrink:0">'+(t.target ? '/ '+t.target+' / wk' : 'count')+'</span>'
             : '<span style="font-size:.68rem;color:#bbb;flex-shrink:0">checkbox</span>';
@@ -1121,7 +1121,7 @@ function renderMap(month,q){
 
   function taskChip(t,d){
     if(d.standing){
-      var tt=t.type||'count';
+      var tt=t.type||(t.target!==null&&t.target!==undefined?'count':'check');
       if(tt==='count'){
         var wc=getWeekCount(t.id); var hasTgt=t.target!==null&&t.target!==undefined;
         var cs,ct;
@@ -2079,7 +2079,7 @@ function printWeeklyReview(){
     var delivsHtml = g.delivs.map(function(d){
       var tasksHtml = d.tasks.map(function(t){
         if(d.standing){
-          var tt=t.type||'count';
+          var tt=t.type||(t.target!==null&&t.target!==undefined?'count':'check');
           if(tt==='count'){
             var wc=getWeekCount(t.id)||0, tgt=t.target, hasTgt=tgt!==null&&tgt!==undefined;
             var chipColor=!hasTgt?'#eee;color:#888':wc>=tgt?'#D6F0E0;color:#1A7A4A':'#FFF3CD;color:#7D5A00';
@@ -2161,7 +2161,7 @@ function printStrategyOverview(){
     var tasksHtml = g.delivs.map(function(d,di){
       var taskRows = d.tasks.map(function(t){
         if(d.standing){
-          var tt=t.type||'count';
+          var tt=t.type||(t.target!==null&&t.target!==undefined?'count':'check');
           if(tt==='count'){
             var wc=getWeekCount(t.id)||0, tgt=t.target, hasTgt=tgt!==null&&tgt!==undefined;
             var chipStyle=!hasTgt?'background:#eee;color:#888':wc>=tgt?'background:#D6F0E0;color:#1A7A4A':'background:#FFF3CD;color:#7D5A00';
