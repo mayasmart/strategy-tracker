@@ -462,7 +462,10 @@ async function refreshToken(){
   return false;
 }
 
-function signOut(){
+async function signOut(){
+  // Flush any pending saves before clearing the token
+  if(saveTimer) clearTimeout(saveTimer);
+  if(Object.keys(pendingChanges).length > 0) await flushSave();
   accessToken = null;
   tokenExpiry = null;
   localStorage.removeItem('access_token');
@@ -473,9 +476,9 @@ function signOut(){
   document.getElementById('app').style.display = 'none';
 }
 
-function handleAuth(){
+async function handleAuth(){
   if(isSignedIn()){
-    if(confirm('Sign out?')) signOut();
+    if(confirm('Sign out?')) await signOut();
   } else {
     signIn();
   }
@@ -822,7 +825,9 @@ function saveScorecardVal(goalN, month, value, notes){
   // Build full row for this goal
   var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var vals = [goalN].concat(months.map(m => sc.months[m]!==undefined ? sc.months[m] : '')).concat(months.map(m => sc.notes[m]||''));
-  var rowNum = goalN + 1;
+  // Row 1 is header, so each goal's row = its position in SC array + 2
+  var scIndex = SC.findIndex(s => s.gn === goalN);
+  var rowNum = scIndex + 2;
   queueSave('Scorecard!A'+rowNum+':Z'+rowNum, [vals]);
 }
 
@@ -1471,7 +1476,6 @@ function updateScorecardNotes(ta, goalN, month){
   var sc = SC.find(s=>s.gn===goalN);
   if(!sc) return;
   sc.notes[month] = ta.value;
-  queueSave('Scorecard!A:Z', [[]]); // will be replaced by proper row save
   saveScorecardVal(goalN, month, sc.months[month]||'', ta.value);
 }
 
