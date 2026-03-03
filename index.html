@@ -549,7 +549,7 @@ async function sheetsUpdate(sheetId, range, values){
   var resp = await fetch(url,{
     method:'PUT',
     headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
-    body: JSON.stringify({range:range,values:values})
+    body: JSON.stringify({values:values})
   });
   if(resp.status===401){ if(await refreshToken()) return sheetsUpdate(sheetId,range,values); throw new Error('Unauthorized'); }
   if(!resp.ok){ var body=''; try{body=JSON.stringify(await resp.json());}catch(x){} throw new Error('HTTP '+resp.status+' '+body); }
