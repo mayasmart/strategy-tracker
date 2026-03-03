@@ -1611,19 +1611,25 @@ function getCountForWeek(taskId, week){
 
 function updateSummaryStrip(){
   var allTasks = [];
-  MD.forEach(function(g){ g.delivs.forEach(function(d){ if(!d.standing) d.tasks.filter(function(t){ return (t.week||CURRENT_WEEK_ISO)===viewingWeek; }).forEach(function(t){ allTasks.push(t); }); }); });
-  var total = allTasks.length;
-  var cp = allTasks.filter(function(t){ return getWeekStatus(t.id)==='cp'; }).length;
+  MD.forEach(function(g){ g.delivs.forEach(function(d){
+    if(d.standing){
+      d.tasks.forEach(function(t){ allTasks.push({t:t, d:d}); });
+    } else {
+      d.tasks.filter(function(t){ return (t.week||CURRENT_WEEK_ISO)===viewingWeek; }).forEach(function(t){ allTasks.push({t:t, d:d}); });
+    }
+  }); });
+  var total = allTasks.filter(function(x){ return isTaskCountable(x.t, x.d); }).length;
+  var cp = allTasks.filter(function(x){ return isTaskCountable(x.t, x.d) && isTaskComplete(x.t, x.d); }).length;
   var pct = total>0 ? Math.round(cp/total*100) : 0;
 
 
   // Deliverables in progress = at least one started task but not all complete
   var delivIP = 0;
   MD.forEach(function(g){ g.delivs.forEach(function(d){
-    if(d.standing) return;
-    var statuses = d.tasks.map(function(t){ return getWeekStatus(t.id); });
-    var hasSome = statuses.some(function(s){ return s==='ip'||s==='cp'; });
-    var allDone = statuses.length > 0 && statuses.every(function(s){ return s==='cp'; });
+    var tasks = d.standing ? d.tasks : d.tasks.filter(function(t){ return (t.week||CURRENT_WEEK_ISO)===viewingWeek; });
+    if(tasks.length === 0) return;
+    var hasSome = tasks.some(function(t){ return isTaskComplete(t, d) || getWeekStatus(t.id)==='ip'; });
+    var allDone = tasks.every(function(t){ return isTaskComplete(t, d); });
     if(hasSome && !allDone) delivIP++;
   }); });
 
