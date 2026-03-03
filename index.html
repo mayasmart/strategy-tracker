@@ -1116,7 +1116,9 @@ function renderPlan(){
         +'<div class="dot-lg" style="background:'+d.c+'"></div>'
         +'<div class="dt2">'+d.t+'</div>'
         +(isStanding ? '<span style="font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--td);background:var(--mn);padding:2px 7px;border-radius:3px">Standing</span>' : '')
-        +'<button class="btn-ic dh-edit" data-gn="'+g.n+'" data-dt="'+d.t.replace(/"/g,'&quot;')+'" style="margin-left:auto">✎</button>'
+        +(isStanding
+          ? '<button class="btn-ic" onclick="openEditStandingDeliverable('+g.n+',\''+d.t.replace(/'/g,"\\'")+'\');" style="margin-left:auto">✎</button>'
+          : '<button class="btn-ic dh-edit" data-gn="'+g.n+'" data-dt="'+d.t.replace(/"/g,'&quot;')+'" style="margin-left:auto">✎</button>')
         +'</div><div class="tl-p">'+tasksHtml+'</div></div>';
     }).join('');
 
