@@ -580,7 +580,7 @@ async function sheetsBatchGet(sheetId, ranges){
 // ═══════════════════════════════════════════════════════════
 
 // SHEET LAYOUT ASSUMPTIONS:
-// "Weekly Review" tab:
+// "Tasks" tab:
 //   Row 1: Headers: Week | Task ID | Goal# | Deliverable | Task | Status | RecurringCount | RecurringTarget | Notes
 //   Rows 2+: Data rows — one per task per week
 //   Week format: "2026-W08" (ISO week)
@@ -723,14 +723,6 @@ async function flushSave(){
     var range = ranges[i];
     try{
       await sheetsUpdate(SHEET_ID, range, toSave[range]);
-      // Clear leftover rows beyond what we wrote (non-fatal)
-      if(range.startsWith('Plan!') || range.startsWith('Weekly Review!')){
-        var tabName = range.split('!')[0];
-        var colEnd = range.split(':')[1].replace(/[0-9]+/,'');
-        var rowCount = toSave[range].length;
-        try{ await sheetsClear(SHEET_ID, tabName+'!A'+(rowCount+1)+':'+colEnd+(rowCount+500)); }
-        catch(ce){ console.warn('Clear stale rows failed (non-fatal):', ce); }
-      }
     }catch(e){
       console.error('Save failed for '+range+':', e);
       failed[range] = toSave[range];
@@ -755,7 +747,7 @@ async function flushSave(){
 async function loadWeeklyData(isoWeek){
   if(!isSignedIn()) return;
   try{
-    var data = await sheetsGet(SHEET_ID, 'Weekly Review!A:I');
+    var data = await sheetsGet(SHEET_ID, 'Tasks!A:I');
     var rows = data.values || [];
     // Parse rows: [Week, TaskID, Goal#, Deliverable, Task, Status, RecurringCount, RecurringTarget, Notes]
     // Load all weeks at once so navigation to past/future weeks works
@@ -848,7 +840,7 @@ function saveWeeklyData(){
       rows.push([wk, taskId, goalN, delivTitle, taskObj.t, entry.status||'ns', entry.count||'', '', entry.notes||'']);
     });
   });
-  queueSave('Weekly Review!A1:I'+rows.length, rows);
+  queueSave('Tasks!A1:I'+rows.length, rows);
 }
 
 function saveTaskStatus(taskId, goalN, delivTitle, taskTitle, status, count, notes){
@@ -1536,7 +1528,7 @@ function updateTaskStatus(goalN, delivTitle, taskId, status){
   if(!weekData[viewingWeek]) weekData[viewingWeek] = {};
   weekData[viewingWeek][taskId] = weekData[viewingWeek][taskId] || {};
   weekData[viewingWeek][taskId].status = status;
-  // Queue save to Weekly Review sheet
+  // Queue save to Tasks sheet
   var taskObj = null;
   MD.forEach(function(g){ g.delivs.forEach(function(d){ d.tasks.forEach(function(t){ if(t.id===taskId) taskObj=t; }); }); });
   if(taskObj) saveTaskStatus(taskId, goalN, delivTitle, taskObj.t, status, weekData[viewingWeek][taskId].count||null, '');
