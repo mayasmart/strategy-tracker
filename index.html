@@ -551,7 +551,7 @@ async function sheetsUpdate(sheetId, range, values){
     body: JSON.stringify({range,values})
   });
   if(resp.status===401){ if(await refreshToken()) return sheetsUpdate(sheetId,range,values); throw new Error('Unauthorized'); }
-  if(!resp.ok) throw new Error('Sheets API error: '+resp.status);
+  if(!resp.ok){ var body=''; try{body=JSON.stringify(await resp.json());}catch(x){} throw new Error('HTTP '+resp.status+' '+body); }
   return resp.json();
 }
 
@@ -715,22 +715,26 @@ async function flushSave(){
   var toSave = Object.assign({}, pendingChanges);
   pendingChanges = {};
   try{
-    for(var range in toSave){
-      // Write data first, then clear stale rows beyond written range
+    var ranges = Object.keys(toSave);
+    for(var i = 0; i < ranges.length; i++){
+      var range = ranges[i];
+      // Write data
       await sheetsUpdate(SHEET_ID, range, toSave[range]);
-      // Clear any leftover rows beyond what we just wrote
+      // Clear any leftover rows beyond what we just wrote (non-fatal if this fails)
       if(range.startsWith('Plan!') || range.startsWith('Weekly Review!')){
         var tabName = range.split('!')[0];
         var rowCount = toSave[range].length;
-        await sheetsClear(SHEET_ID, tabName+'!A'+(rowCount+1)+':ZZ');
+        try{ await sheetsClear(SHEET_ID, tabName+'!A'+(rowCount+1)+':ZZ'); }
+        catch(ce){ console.warn('Clear stale rows failed (non-fatal):', ce); }
       }
     }
     showSaveIndicator('saved');
   }catch(e){
+    console.error('Save failed:', e);
     // Put failed changes back so they retry
     Object.assign(pendingChanges, toSave);
     showSaveIndicator('error');
-    showToast('Could not save to Google Sheets', true);
+    showToast('Save failed: ' + (e.message||e), true);
   }
   isSaving = false;
   // If more changes queued while we were saving, flush them now
