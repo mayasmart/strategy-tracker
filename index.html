@@ -241,6 +241,7 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
 .today-row:hover{background:#fafafa}
 .today-row.done{opacity:.5}
 .today-src{font-size:.65rem;color:#aaa;background:#f5f5f5;padding:1px 7px;border-radius:3px;flex-shrink:0;white-space:nowrap}
+.today-row .wtt{flex:none}
 .today-empty{padding:32px;text-align:center;color:#ccc;font-size:.88rem;font-style:italic}
 .tr-p.focus-task{background:#FFFDF5;border-left:2px solid var(--go);margin-left:-2px}
 .tr-p.dragging{opacity:.4;background:#f0f0f0}
@@ -713,12 +714,14 @@ async function flushSave(){
   pendingChanges = {};
   try{
     for(var range in toSave){
-      // Clear the full sheet tab first to remove stale rows beyond new data
+      // Write data first, then clear stale rows beyond written range
+      await sheetsUpdate(SHEET_ID, range, toSave[range]);
+      // Clear any leftover rows beyond what we just wrote
       if(range.startsWith('Plan!') || range.startsWith('Weekly Review!')){
         var tabName = range.split('!')[0];
-        await sheetsClear(SHEET_ID, tabName+'!A2:ZZ');
+        var rowCount = toSave[range].length;
+        await sheetsClear(SHEET_ID, tabName+'!A'+(rowCount+1)+':ZZ');
       }
-      await sheetsUpdate(SHEET_ID, range, toSave[range]);
     }
     showSaveIndicator('saved');
   }catch(e){
@@ -831,7 +834,7 @@ function saveWeeklyData(){
       rows.push([wk, taskId, goalN, delivTitle, taskObj.t, entry.status||'ns', entry.count||'', '', entry.notes||'']);
     });
   });
-  queueSave('Weekly Review!A1:I'+rows.length, rows);
+  queueSave('Weekly Review!A1:I1000', rows);
 }
 
 function saveTaskStatus(taskId, goalN, delivTitle, taskTitle, status, count, notes){
