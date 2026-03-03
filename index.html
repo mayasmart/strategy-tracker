@@ -548,7 +548,8 @@ async function sheetsUpdate(sheetId, range, values){
   var resp = await fetch(url,{
     method:'PUT',
     headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
-    body: JSON.stringify({range,values})
+    body: JSON.stringify({range,values}),
+    keepalive: true
   });
   if(resp.status===401){ if(await refreshToken()) return sheetsUpdate(sheetId,range,values); throw new Error('Unauthorized'); }
   return resp.json();
@@ -558,7 +559,8 @@ async function sheetsClear(sheetId, range){
   var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+encodeURIComponent(range)+':clear';
   var resp = await fetch(url,{
     method:'POST',
-    headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'}
+    headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+    keepalive: true
   });
   if(resp.status===401){ if(await refreshToken()) return sheetsClear(sheetId,range); throw new Error('Unauthorized'); }
   return resp.json();
@@ -2719,6 +2721,20 @@ async function init(){
 }
 
 init();
+
+// Prevent data loss on refresh/close — flush pending saves and warn if needed
+window.addEventListener('beforeunload', function(e){
+  // Immediately flush any debounced saves
+  if(Object.keys(pendingChanges).length > 0){
+    clearTimeout(saveTimer);
+    flushSave(); // fire-and-forget; keepalive on fetches lets it complete after unload
+  }
+  // Warn user if there are unsaved changes still in flight
+  if(Object.keys(pendingChanges).length > 0 || isSaving){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
 
 // Delegated handler for deliverable edit buttons (avoids inline escaping issues)
 document.addEventListener('click', function(e){
