@@ -218,9 +218,11 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
 .loading-text{font-size:.82rem;color:#aaa}
 
 /* TOAST */
-.toast{position:fixed;bottom:24px;right:24px;background:var(--dt);color:var(--wh);padding:10px 18px;border-radius:8px;font-size:.82rem;box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:2000;opacity:0;transform:translateY(8px);transition:all .25s}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--dt);color:var(--wh);padding:10px 18px;border-radius:8px;font-size:.82rem;box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:2000;opacity:0;transform:translateY(8px);transition:all .25s;display:flex;align-items:center;gap:12px}
 .toast.show{opacity:1;transform:none}
 .toast.err{background:#b22222}
+.toast-undo{background:none;border:1.5px solid rgba(255,255,255,.5);color:#fff;padding:3px 10px;border-radius:4px;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.toast-undo:hover{background:rgba(255,255,255,.15)}
 
 /* Print button */
 .print-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-family:var(--fb);font-size:.8rem;font-weight:600;cursor:pointer;border:1.5px solid var(--mn);color:var(--dt);background:var(--wh);transition:all .14s;text-decoration:none;white-space:nowrap}
@@ -627,6 +629,26 @@ function getWeekNote(isoWeek){
 var saveTimer = null;
 var pendingChanges = {}; // {range: values}
 var isSaving = false;
+var undoStack = []; // stack of {snapshot, label} — up to 10 deep
+var undoTimer = null;
+
+function snapshotMD(){
+  return JSON.parse(JSON.stringify(MD));
+}
+
+function pushUndo(label){
+  undoStack.push({ snapshot: snapshotMD(), label: label });
+  if(undoStack.length > 10) undoStack.shift();
+}
+
+function applyUndo(){
+  var entry = undoStack.pop();
+  if(!entry) return;
+  MD = entry.snapshot;
+  renderAll();
+  savePlan();
+  showToast('Undone: '+entry.label);
+}
 
 function queueSave(range, values){
   if(!isSignedIn()) return;
@@ -879,19 +901,24 @@ async function loadPlanData(){
         if(!isStanding) delete d.standing;
         g.delivs.push(d);
       }
-      if(row[14]) d.month = row[14]; // DelivMonth
-      var taskId = row[15]||'';
+      // Support both old schema (no DelivMonth, TaskID at col 14) and new (DelivMonth at 14, TaskID at 15)
+      // Detect by checking if col 14 looks like a task ID (starts with T) or a month name
+      var hasDelivMonth = row[14] && /^[A-Z][a-z]+$/.test(row[14]) && !row[14].startsWith('T');
+      var monthCol = hasDelivMonth ? 14 : -1;
+      var taskIdCol = hasDelivMonth ? 15 : 14;
+      if(monthCol >= 0 && row[monthCol]) d.month = row[monthCol];
+      var taskId = row[taskIdCol]||'';
       if(!taskId) return;
-      var tcount = row[18]!==''&&row[18]!==undefined ? parseInt(row[18])||0 : null;
-      var ttarget = row[19]!==''&&row[19]!==undefined ? parseInt(row[19]) : null;
-      var ttype = row[21] || (isStanding ? 'count' : undefined);
+      var tcount = row[taskIdCol+3]!==''&&row[taskIdCol+3]!==undefined ? parseInt(row[taskIdCol+3])||0 : null;
+      var ttarget = row[taskIdCol+4]!==''&&row[taskIdCol+4]!==undefined ? parseInt(row[taskIdCol+4]) : null;
+      var ttype = row[taskIdCol+6] || (isStanding ? 'count' : undefined);
       d.tasks.push({
         id: taskId,
-        t: row[16]||'',
-        s: row[17]||'ns',
+        t: row[taskIdCol+1]||'',
+        s: row[taskIdCol+2]||'ns',
         count: tcount,
         target: ttarget,
-        week: row[20]||CURRENT_WEEK_ISO,
+        week: row[taskIdCol+5]||CURRENT_WEEK_ISO,
         type: ttype
       });
     });
@@ -1475,21 +1502,49 @@ function initMapToCurrentMonth(){
 }
 
 function rollTaskForward(taskId){
-  // Find the task in MD
-  var taskObj=null, delivTitle='', goalN=null;
+  // Find the task and its deliverable
+  var taskObj=null, srcDeliv=null, goalObj=null;
   MD.forEach(function(g){ g.delivs.forEach(function(d){ d.tasks.forEach(function(t){
-    if(t.id===taskId){ taskObj=t; delivTitle=d.t; goalN=g.n; }
+    if(t.id===taskId){ taskObj=t; srcDeliv=d; goalObj=g; }
   }); }); });
-  if(!taskObj) return;
+  if(!taskObj || !srcDeliv || !goalObj) return;
+
   var nextWeek = shiftWeekISO(viewingWeek, 1);
-  // Clone the task with a new ID scheduled for next week, status reset to ns
+  var nextMonday = isoWeekToMonday(nextWeek);
+  var nextMonthName = ['January','February','March','April','May','June','July','August','September','October','November','December'][nextMonday.getMonth()];
+
+  // Clone the task
   var newTask = { id:'T'+Date.now()+Math.random().toString(36).slice(2,5), t:taskObj.t, s:'ns', week:nextWeek };
-  // Add to same deliverable
-  MD.forEach(function(g){ if(g.n!==goalN) return; g.delivs.forEach(function(d){
-    if(d.t===delivTitle) d.tasks.push(newTask);
-  }); });
-  renderAll(); savePlan();
-  showToast('Task copied to '+weekBadgeLabel(nextWeek));
+
+  // Check if we're crossing a month boundary
+  var srcMonth = srcDeliv.month || null;
+  var crossingMonth = srcMonth && nextMonthName !== srcMonth;
+
+  if(crossingMonth){
+    // Look for an existing copy of this deliverable in the next month
+    var existingDeliv = goalObj.delivs.find(function(d){
+      return !d.standing && d.t === srcDeliv.t && d.month === nextMonthName;
+    });
+    if(existingDeliv){
+      // Add to the existing copy
+      existingDeliv.tasks.push(newTask);
+    } else {
+      // Create a new deliverable copy in the next month
+      var newDeliv = { c: srcDeliv.c, t: srcDeliv.t, month: nextMonthName, tasks: [newTask] };
+      // Insert right after the source deliverable
+      var srcIdx = goalObj.delivs.indexOf(srcDeliv);
+      goalObj.delivs.splice(srcIdx + 1, 0, newDeliv);
+    }
+    pushUndo('Roll forward across month');
+    renderAll(); savePlan();
+    showToast('Task copied to '+nextMonthName+' · '+weekBadgeLabel(nextWeek), false, true);
+  } else {
+    // Same month — add to same deliverable
+    srcDeliv.tasks.push(newTask);
+    pushUndo('Roll forward task');
+    renderAll(); savePlan();
+    showToast('Task copied to '+weekBadgeLabel(nextWeek), false, true);
+  }
 }
 
 function shiftWeek(delta){
@@ -1568,18 +1623,20 @@ function openEditTask(goalN, delivTitle, taskId){
   document.getElementById('et-save').onclick = function(){
     var title = inp.value.trim();
     if(!title){ inp.style.borderColor='#e55'; return; }
+    pushUndo('Edit task');
     t.t = title;
     t.week = document.getElementById('task-week-sel').value;
     overlay.remove();
     renderAll(); savePlan();
-    showToast('Task updated');
+    showToast('Task updated', false, true);
   };
 
   document.getElementById('et-delete').onclick = function(){
+    pushUndo('Delete task');
     d.tasks = d.tasks.filter(function(tk){ return tk.id !== taskId; });
     overlay.remove();
     renderAll(); savePlan();
-    showToast('Task deleted');
+    showToast('Task deleted', false, true);
   };
 }
 
@@ -1668,10 +1725,11 @@ function openAddTask(goalN, delivTitle){
     if(!title){ inp.style.borderColor='#e55'; return; }
     var newId = 'T'+Date.now();
     var week = document.getElementById('task-week-sel').value;
+    pushUndo('Add task');
     d.tasks.push({ id: newId, t: title, s: 'ns', week: week });
     overlay.remove();
     renderAll(); savePlan();
-    showToast('Task added for '+weekBadgeLabel(week));
+    showToast('Task added for '+weekBadgeLabel(week), false, true);
   };
 }
 
@@ -1704,9 +1762,10 @@ function openEditGoal(goalN){
     g.type = document.getElementById('eg-type').value;
     var sc = SC.find(s=>s.gn===goalN);
     if(sc){ sc.target=g.target; sc.type=g.type; sc.label=g.label; }
+    pushUndo('Edit goal');
     overlay.remove();
     renderAll(); savePlan();
-    showToast('Goal '+goalN+' updated');
+    showToast('Goal '+goalN+' updated', false, true);
   };
 }
 
@@ -1796,19 +1855,21 @@ function openEditDeliverable(goalN, delivTitle){
     var title = inp.value.trim();
     if(!title){ inp.style.borderColor='#e55'; return; }
     d.t = title;
+    pushUndo('Edit deliverable');
     d.c = colorOptions[selectedColor];
     d.month = document.getElementById('ed-month').value;
     overlay.remove();
     renderAll(); savePlan();
-    showToast('Deliverable updated');
+    showToast('Deliverable updated', false, true);
   };
 
   document.getElementById('ed-delete').onclick = function(){
     if(!confirm('Delete "'+d.t+'" and all its tasks?')) return;
+    pushUndo('Delete deliverable');
     g.delivs = g.delivs.filter(function(x){ return x.t !== delivTitle; });
     overlay.remove();
     renderAll(); savePlan();
-    showToast('Deliverable deleted');
+    showToast('Deliverable deleted', false, true);
   };
 }
 
@@ -1880,10 +1941,11 @@ function openAddStandingDeliverable(goalN){
       return { id:'T'+Date.now()+Math.random().toString(36).slice(2,6), t:tr.name.trim(), s:'ns', type:tr.type, count:null, target:tgt };
     });
     if(tasks.length === 0){ showToast('Add at least one task'); return; }
+    pushUndo('Add standing deliverable');
     g.delivs.unshift({ c:g.c, t:title, standing:true, tasks:tasks });
     overlay.remove();
     renderAll(); savePlan();
-    showToast('Standing deliverable added');
+    showToast('Standing deliverable added', false, true);
   }
 
   box._name = '';
@@ -1950,10 +2012,11 @@ function openAddDeliverable(goalN){
     var month = document.getElementById('ad-month').value;
     var col = colorOptions[selectedColor];
     var newId = 'T'+(Date.now());
+    pushUndo('Add deliverable');
     g.delivs.push({ c: col, t: title, month: month, tasks: [] });
     overlay.remove();
     renderAll(); savePlan();
-    showToast('Deliverable added to Goal '+goalN);
+    showToast('Deliverable added to Goal '+goalN, false, true);
   };
 }
 
@@ -2046,11 +2109,12 @@ function openAddGoal(){
       target: target, type: type, label: label,
       s: strategy, delivs: []
     };
+    pushUndo('Add goal');
     MD.push(newGoal);
     SC.push({gn: nextN, color: pal.c, gl: pal.l, type: type, label: label, target: target, months: {}, notes: {}});
     overlay.remove();
     renderAll(); savePlan();
-    showToast('Goal '+nextN+' added');
+    showToast('Goal '+nextN+' added', false, true);
   };
 }
 
@@ -2267,15 +2331,18 @@ function showLoading(msg){
 function hideLoading(){ document.getElementById('loading').style.display = 'none'; }
 
 var toastTimer;
-function showToast(msg, isError){
+function showToast(msg, isError, undoLabel){
   var el = document.getElementById('toast');
-  el.textContent = msg;
   el.className = 'toast' + (isError?' err':'');
+  if(undoLabel && undoStack.length > 0){
+    el.innerHTML = '<span>'+msg+'</span><button class="toast-undo" onclick="applyUndo()">Undo</button>';
+  } else {
+    el.textContent = msg;
+  }
   clearTimeout(toastTimer);
-  // Force reflow
   el.offsetHeight;
   el.classList.add('show');
-  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 3000);
+  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 4000);
 }
 
 // ═══════════════════════════════════════════════════════════
