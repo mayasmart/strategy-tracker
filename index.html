@@ -536,6 +536,7 @@ function updateAuthUI(loggedIn, email){
 // ═══════════════════════════════════════════════════════════
 // SHEETS API
 // ═══════════════════════════════════════════════════════════
+// Encode range for Sheets API URL path — encode tab name but keep A1 cell notation literal
 async function sheetsGet(sheetId, range){
   var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+encodeURIComponent(range);
   var resp = await fetch(url,{headers:{'Authorization':'Bearer '+accessToken}});
@@ -548,7 +549,7 @@ async function sheetsUpdate(sheetId, range, values){
   var resp = await fetch(url,{
     method:'PUT',
     headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
-    body: JSON.stringify({range,values})
+    body: JSON.stringify({range:range,values:values})
   });
   if(resp.status===401){ if(await refreshToken()) return sheetsUpdate(sheetId,range,values); throw new Error('Unauthorized'); }
   if(!resp.ok){ var body=''; try{body=JSON.stringify(await resp.json());}catch(x){} throw new Error('HTTP '+resp.status+' '+body); }
@@ -716,10 +717,11 @@ async function flushSave(){
   isSaving = true;
   var toSave = Object.assign({}, pendingChanges);
   pendingChanges = {};
-  try{
-    var ranges = Object.keys(toSave);
-    for(var i = 0; i < ranges.length; i++){
-      var range = ranges[i];
+  var failed = {};
+  var ranges = Object.keys(toSave);
+  for(var i = 0; i < ranges.length; i++){
+    var range = ranges[i];
+    try{
       await sheetsUpdate(SHEET_ID, range, toSave[range]);
       // Clear leftover rows beyond what we wrote (non-fatal)
       if(range.startsWith('Plan!') || range.startsWith('Weekly Review!')){
@@ -729,15 +731,19 @@ async function flushSave(){
         try{ await sheetsClear(SHEET_ID, tabName+'!A'+(rowCount+1)+':'+colEnd+(rowCount+500)); }
         catch(ce){ console.warn('Clear stale rows failed (non-fatal):', ce); }
       }
+    }catch(e){
+      console.error('Save failed for '+range+':', e);
+      failed[range] = toSave[range];
     }
+  }
+  if(Object.keys(failed).length > 0){
+    Object.assign(pendingChanges, failed);
+    showSaveIndicator('error');
+    showToast('Save failed for: ' + Object.keys(failed).map(function(r){return r.split('!')[0];}).join(', '), true);
+    retryDelay = Math.min(retryDelay * 2, 30000);
+  } else {
     retryDelay = 150;
     showSaveIndicator('saved');
-  }catch(e){
-    console.error('Save failed:', e);
-    Object.assign(pendingChanges, toSave);
-    showSaveIndicator('error');
-    showToast('Save failed: ' + (e.message||e), true);
-    retryDelay = Math.min(retryDelay * 2, 30000);
   }
   isSaving = false;
   if(Object.keys(pendingChanges).length > 0){
