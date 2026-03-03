@@ -228,6 +228,29 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
 .print-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-family:var(--fb);font-size:.8rem;font-weight:600;cursor:pointer;border:1.5px solid var(--mn);color:var(--dt);background:var(--wh);transition:all .14s;text-decoration:none;white-space:nowrap}
 .print-btn:hover{border-color:var(--t);background:var(--tl)}
 
+
+/* TODAY */
+.today-card{background:var(--wh);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;border-top:3px solid var(--go)}
+.today-hdr{padding:14px 22px 12px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#FFFDF5,#FFF9E6);border-bottom:1px solid #f0ead0}
+.today-hdr-l{display:flex;align-items:center;gap:9px}
+.today-title{font-family:var(--fd);font-size:1.15rem;color:var(--dt)}
+.today-date{font-size:.72rem;color:#bbb}
+.today-count{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px}
+.today-list{padding:4px 0 6px}
+.today-row{display:flex;align-items:center;gap:10px;padding:9px 22px;border-bottom:1px solid #f5f5f5;transition:background .1s}
+.today-row:last-child{border-bottom:none}
+.today-row:hover{background:#fafafa}
+.today-row.done{opacity:.5}
+.today-src{font-size:.68rem;color:#aaa;background:#f5f5f5;padding:2px 8px;border-radius:4px;flex-shrink:0;white-space:nowrap}
+.today-empty{padding:32px;text-align:center;color:#ccc;font-size:.88rem;font-style:italic}
+.tr-p.focus-task{background:#FFFDF5;border-left:2px solid var(--go);margin-left:-2px}
+.tr-p.dragging{opacity:.4;background:#f0f0f0}
+.tr-p.drag-over{border-top:2px solid var(--t);margin-top:-2px}
+.tr-p[draggable="true"]{cursor:grab}
+.tr-p[draggable="true"]:active{cursor:grabbing}
+.drag-handle{cursor:grab;color:#ccc;font-size:.82rem;padding:0 4px;flex-shrink:0;user-select:none;touch-action:none}
+.drag-handle:hover{color:#999}
+
 @media print{
   header,.save-indicator,.week-btn,.btn,.print-btn{display:none!important}
   main{padding:0}
@@ -241,9 +264,10 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
 <header>
   <span style="font-family:Georgia,serif;font-size:1.15rem;font-style:italic;color:#27A8AF;letter-spacing:.01em;opacity:.95;flex-shrink:0">Maya Smart</span>
   <nav>
-    <button onclick="show('plan')" id="nb-plan">Plan</button>
-    <button onclick="show('map')" id="nb-map" class="active">Strategy Map</button>
+    <button onclick="show('today')" id="nb-today" class="active">Today</button>
     <button onclick="show('weekly')" id="nb-weekly">Weekly Review</button>
+    <button onclick="show('plan')" id="nb-plan">Plan</button>
+    <button onclick="show('map')" id="nb-map">Strategy Map</button>
     <button onclick="show('scorecard')" id="nb-scorecard">Scorecard</button>
   </nav>
   <div class="hdr-r">
@@ -259,6 +283,26 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
 </header>
 <main>
 
+<!-- TODAY VIEW -->
+<div class="view active" id="view-today">
+  <div class="pg-hdr">
+    <div><div class="pg-title">Today's Focus</div><div class="pg-sub" id="today-date-sub"></div></div>
+  </div>
+  <div class="today-card">
+    <div class="today-hdr">
+      <div class="today-hdr-l">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="#D9BC52" stroke="#D9BC52" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+        <span class="today-title">Focus</span>
+        <span class="today-count" id="today-count" style="background:#FDF7E3;color:#A07E00">0 / 0</span>
+      </div>
+      <span class="today-date" id="today-date-label"></span>
+    </div>
+    <div class="today-list" id="today-list">
+      <div class="today-empty">Loading...</div>
+    </div>
+  </div>
+</div>
+
 <!-- PLAN VIEW -->
 <div class="view" id="view-plan">
   <div class="pg-hdr">
@@ -272,7 +316,7 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
 </div>
 
 <!-- STRATEGY MAP VIEW -->
-<div class="view active" id="view-map">
+<div class="view" id="view-map">
   <div class="pg-hdr">
     <div><div class="pg-title">Strategy Map</div><div class="pg-sub">Annual Goals · Quarterly Strategy · Monthly Deliverables · Weekly Tasks</div></div>
     <div style="display:flex;gap:8px;align-items:center">
@@ -1031,6 +1075,134 @@ function renderStandingCard(d, g, isCurrent){
     +d.tasks.map(recRow).join('')
     +'</div></div>';
 }
+
+// ═══════════════════════════════════════════════════════════
+// RENDER — TODAY'S FOCUS
+// ═══════════════════════════════════════════════════════════
+function isTaskComplete(t, d){
+  // Checkbox-style tasks: check weekData status
+  var ws = getWeekStatus(t.id);
+  if(ws === 'cp') return true;
+  // Count tasks with target: complete when count >= target
+  if(d.standing && (t.type||'count') === 'count' && t.target !== null && t.target !== undefined){
+    var wc = getWeekCount(t.id);
+    if(wc !== null && wc >= t.target) return true;
+  }
+  return false;
+}
+
+function isTaskCountable(t, d){
+  // Returns false for count tasks without a target (they don't count toward done/total)
+  if(d.standing && (t.type||'count') === 'count' && (t.target === null || t.target === undefined)) return false;
+  return true;
+}
+
+function getFirstUncompletedTask(d){
+  for(var i=0; i<d.tasks.length; i++){
+    var t = d.tasks[i];
+    if(!isTaskComplete(t, d)) return t;
+  }
+  return null;
+}
+
+function getFocusTasks(){
+  var tasks = [];
+  MD.forEach(function(g){
+    g.delivs.forEach(function(d){
+      var t = getFirstUncompletedTask(d);
+      if(t) tasks.push({task:t, goal:g, deliv:d});
+    });
+  });
+  return tasks;
+}
+
+function renderToday(){
+  var list = document.getElementById('today-list');
+  var countEl = document.getElementById('today-count');
+  var dateLabel = document.getElementById('today-date-label');
+  var dateSub = document.getElementById('today-date-sub');
+  if(!list) return;
+
+  var now = new Date();
+  var dateStr = now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  if(dateLabel) dateLabel.textContent = dateStr;
+  if(dateSub) dateSub.textContent = dateStr;
+
+  var focusTasks = getFocusTasks();
+  if(focusTasks.length === 0){
+    list.innerHTML = '<div class="today-empty">All caught up! No uncompleted tasks found.</div>';
+    if(countEl){ countEl.textContent = 'All done'; countEl.style.background = '#D6F0E0'; countEl.style.color = '#1A7A4A'; }
+    return;
+  }
+
+  var rowsHtml = focusTasks.map(function(ft){
+    var t = ft.task, g = ft.goal, d = ft.deliv;
+    var isCount = d.standing && (t.type||'count') === 'count';
+    var ws = getWeekStatus(t.id);
+
+    if(isCount){
+      var tgt = (t.target !== null && t.target !== undefined) ? t.target : null;
+      var wc = getWeekCount(t.id);
+      var v = (wc !== null && wc !== undefined) ? wc : 0;
+      var hasTgt = tgt !== null;
+      var cls = hasTgt ? (v>=tgt ? 'over' : (v>0 ? 'under' : '')) : '';
+      var status = hasTgt ? (v>=tgt ? '<span class="rec-status over">\u2713 On target</span>' : (v>0 ? '<span class="rec-status under">\u2197 Below</span>' : '<span class="rec-status none">\u2014</span>')) : '';
+
+      return '<div class="today-row">'
+        +'<div style="width:7px;height:7px;border-radius:50%;background:'+g.c+';flex-shrink:0"></div>'
+        +'<div class="wtt" style="flex:1">'+t.t+'</div>'
+        +'<div class="rec-wrap">'
+        +'<input class="rec-inp'+(cls?' '+cls:'')+'" type="number" min="0" value="'+(v>0?v:'')+'" placeholder="\u2014"'
+        +' oninput="updRecurring(this,\''+t.id+'\','+(hasTgt?tgt:'null')+','+g.n+');renderToday()">'
+        +(hasTgt ? '<span class="rec-target">/ '+tgt+'</span>' : '<span class="rec-target">this wk</span>')
+        +(hasTgt ? status : '')
+        +'</div>'
+        +'<span class="today-src">'+d.t+'</span>'
+        +'</div>';
+    }
+
+    // Checkbox-style task
+    var isDone = ws === 'cp';
+    var ck = ws==='cp' ? ' cp' : ws==='ip' ? ' ip' : '';
+    var chk = ws==='cp' ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
+
+    return '<div class="today-row'+(isDone?' done':'')+'">'
+      +'<div class="wck'+ck+'" onclick="toggleTask(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\');renderToday()">'+chk+'</div>'
+      +'<div style="width:7px;height:7px;border-radius:50%;background:'+g.c+';flex-shrink:0"></div>'
+      +'<div class="wtt" style="flex:1;'+(isDone?'text-decoration:line-through':'')+'">'+ t.t+'</div>'
+      +'<select class="sel '+ws+'" onchange="cSel(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\');renderToday()">'
+      +'<option'+(ws==='ns'?' selected':'')+'>Not Started</option>'
+      +'<option'+(ws==='ip'?' selected':'')+'>In Progress</option>'
+      +'<option'+(ws==='cp'?' selected':'')+'>Complete</option>'
+      +'<option'+(ws==='oh'?' selected':'')+'>On Hold</option>'
+      +'</select>'
+      +'<span class="today-src">'+d.t+'</span>'
+      +'</div>';
+  }).join('');
+
+  list.innerHTML = rowsHtml;
+
+  // Count done: exclude targetless count tasks from denominator
+  var doneCount = 0, totalCountable = 0;
+  focusTasks.forEach(function(ft){
+    var t = ft.task, d = ft.deliv;
+    if(!isTaskCountable(t, d)) return; // skip targetless counts
+    totalCountable++;
+    if(isTaskComplete(t, d)) doneCount++;
+  });
+
+  if(countEl){
+    if(totalCountable === 0){
+      countEl.textContent = '\u2014';
+      countEl.style.background = '#f0f0f0'; countEl.style.color = '#999';
+    } else {
+      countEl.textContent = doneCount + ' / ' + totalCountable + ' done';
+      if(doneCount === totalCountable){ countEl.style.background = '#D6F0E0'; countEl.style.color = '#1A7A4A'; }
+      else { countEl.style.background = '#FDF7E3'; countEl.style.color = '#A07E00'; }
+    }
+  }
+}
+
 // ═══════════════════════════════════════════════════════════
 // RENDER — PLAN
 // ═══════════════════════════════════════════════════════════
@@ -1086,12 +1258,15 @@ function renderPlan(){
       var isStanding = d.standing;
       var tasksHtml = '';
       if(isStanding){
+        var _firstUncompS = null;
+        for(var _fsi=0;_fsi<d.tasks.length;_fsi++){ if(!isTaskComplete(d.tasks[_fsi],d)){_firstUncompS=d.tasks[_fsi].id;break;} }
         tasksHtml = d.tasks.map(function(t){
           var taskType = t.type||'count';
+          var _focusS = t.id===_firstUncompS ? ' focus-task' : '';
           var typeLabel = taskType === 'count'
             ? '<span style="font-size:.68rem;color:#bbb;flex-shrink:0">'+(t.target ? '/ '+t.target+' / wk' : 'count')+'</span>'
             : '<span style="font-size:.68rem;color:#bbb;flex-shrink:0">checkbox</span>';
-          return '<div class="tr-p" style="padding-left:36px"><div class="tt-p">'+t.t+'</div>'
+          return '<div class="tr-p'+_focusS+'" style="padding-left:36px" draggable="true" data-task-id="'+t.id+'" data-goal="'+g.n+'" data-deliv="'+d.t.replace(/"/g,'&quot;')+'"><span class="drag-handle">&#9776;</span><div class="tt-p">'+t.t+'</div>'
             +typeLabel
             +'<button class="btn-ic" onclick="openEditTask('+g.n+',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">✎</button></div>';
         }).join('');
@@ -1099,10 +1274,13 @@ function renderPlan(){
         var visibleTasks = filterWeeks
           ? d.tasks.filter(function(t){ return filterWeeks.indexOf(t.week||CURRENT_WEEK_ISO) >= 0; })
           : d.tasks;
+        var _firstUncompNS = null;
+        for(var _fni=0;_fni<visibleTasks.length;_fni++){ if(!isTaskComplete(visibleTasks[_fni],d)){_firstUncompNS=visibleTasks[_fni].id;break;} }
         tasksHtml = visibleTasks.map(function(t){
           var isPast = isWeekPast(t.week);
           var badgeCls = isPast ? 'wk-badge past' : 'wk-badge';
-          return '<div class="tr-p"><div class="dot-sm" style="background:'+d.c+'"></div>'
+          var _focusNS = t.id===_firstUncompNS ? ' focus-task' : '';
+          return '<div class="tr-p'+_focusNS+'" draggable="true" data-task-id="'+t.id+'" data-goal="'+g.n+'" data-deliv="'+d.t.replace(/"/g,'"')+'">' + '<span class="drag-handle">&#9776;</span><div class="dot-sm" style="background:'+d.c+'"></div>'
             +'<div class="tt-p">'+t.t+'</div>'
             +'<span class="'+badgeCls+'" onclick="openScheduleTask(\''+t.id+'\')">' + weekBadgeLabel(t.week) + '</span>'
             +'<button class="btn-ic" onclick="openEditTask('+g.n+',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">✎</button></div>';
@@ -1116,7 +1294,9 @@ function renderPlan(){
         +'<div class="dot-lg" style="background:'+d.c+'"></div>'
         +'<div class="dt2">'+d.t+'</div>'
         +(isStanding ? '<span style="font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--td);background:var(--mn);padding:2px 7px;border-radius:3px">Standing</span>' : '')
-        +'<button class="btn-ic dh-edit" data-gn="'+g.n+'" data-dt="'+d.t.replace(/"/g,'&quot;')+'" style="margin-left:auto">✎</button>'
+        +(isStanding
+          ? '<button class="btn-ic" onclick="openEditStandingDeliverable('+g.n+',\''+d.t.replace(/'/g,"\\'")+'\');" style="margin-left:auto">✎</button>'
+          : '<button class="btn-ic dh-edit" data-gn="'+g.n+'" data-dt="'+d.t.replace(/"/g,'&quot;')+'" style="margin-left:auto">✎</button>')
         +'</div><div class="tl-p">'+tasksHtml+'</div></div>';
     }).join('');
 
@@ -1289,6 +1469,7 @@ function renderScorecard(){
 // RENDER ALL
 // ═══════════════════════════════════════════════════════════
 function renderAll(){
+  renderToday();
   renderPlanFilterBar();
   renderPlan();
   renderWeeklyReview();
@@ -1299,13 +1480,15 @@ function renderAll(){
 // ═══════════════════════════════════════════════════════════
 // EVENT HANDLERS
 // ═══════════════════════════════════════════════════════════
-var VIEWS=['plan','map','weekly','scorecard'];
+var VIEWS=['today','weekly','plan','map','scorecard'];
 function show(n){
   VIEWS.forEach(function(v){
     document.getElementById('view-'+v).classList.toggle('active',v===n);
     document.getElementById('nb-'+v).classList.toggle('active',v===n);
   });
   if(n==='map') renderMap(CURRENT_MONTH_NAME, CURRENT_QUARTER);
+  if(n==='today'){ viewingWeek = CURRENT_WEEK_ISO; renderToday(); }
+  if(n==='weekly') renderWeeklyReview();
 }
 
 function cSel(s, goalN, delivTitle, taskId){
@@ -2465,7 +2648,7 @@ async function init(){
       showLoading('Loading your strategy...');
       await Promise.all([loadPlanData(), loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
       hideLoading();
-      renderAll(); show('map');
+      renderAll(); show('today');
       return;
     }
   }
@@ -2501,7 +2684,7 @@ async function init(){
         await Promise.all([loadPlanData(), loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
       }catch(e){ console.warn('Sheets load failed, using defaults', e); }
       hideLoading();
-      renderAll(); show('map');
+      renderAll(); show('today');
       return;
     }
   }
@@ -2538,6 +2721,80 @@ document.addEventListener('click', function(e){
     else openEditDeliverable(gn, dt);
   }
 });
+
+// ═══════════════════════════════════════════════════════════
+// DRAG-TO-REORDER TASKS IN PLAN VIEW
+// ═══════════════════════════════════════════════════════════
+var dragSrcEl = null;
+var dragSrcTaskId = null;
+
+document.addEventListener('dragstart', function(e){
+  var row = e.target.closest('.tr-p[draggable]');
+  if(!row) return;
+  dragSrcEl = row;
+  dragSrcTaskId = row.dataset.taskId;
+  row.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', dragSrcTaskId);
+});
+
+document.addEventListener('dragover', function(e){
+  var row = e.target.closest('.tr-p[draggable]');
+  if(!row || row === dragSrcEl) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.tr-p.drag-over').forEach(function(el){ el.classList.remove('drag-over'); });
+  row.classList.add('drag-over');
+});
+
+document.addEventListener('dragleave', function(e){
+  var row = e.target.closest('.tr-p[draggable]');
+  if(row) row.classList.remove('drag-over');
+});
+
+document.addEventListener('drop', function(e){
+  e.preventDefault();
+  document.querySelectorAll('.tr-p.drag-over').forEach(function(el){ el.classList.remove('drag-over'); });
+  document.querySelectorAll('.tr-p.dragging').forEach(function(el){ el.classList.remove('dragging'); });
+
+  var targetRow = e.target.closest('.tr-p[draggable]');
+  if(!targetRow || !dragSrcEl || targetRow === dragSrcEl) return;
+
+  var srcId = dragSrcTaskId;
+  var tgtId = targetRow.dataset.taskId;
+  var goalN = parseInt(targetRow.dataset.goal);
+  var delivTitle = targetRow.dataset.deliv;
+
+  if(parseInt(dragSrcEl.dataset.goal) !== goalN || dragSrcEl.dataset.deliv !== delivTitle) return;
+
+  var g = MD.find(function(g){ return g.n === goalN; });
+  if(!g) return;
+  var d = g.delivs.find(function(d){ return d.t === delivTitle; });
+  if(!d) return;
+
+  var srcIdx = -1, tgtIdx = -1;
+  for(var i=0;i<d.tasks.length;i++){
+    if(d.tasks[i].id === srcId) srcIdx = i;
+    if(d.tasks[i].id === tgtId) tgtIdx = i;
+  }
+  if(srcIdx < 0 || tgtIdx < 0) return;
+
+  pushUndo('Reorder tasks');
+  var task = d.tasks.splice(srcIdx, 1)[0];
+  d.tasks.splice(tgtIdx, 0, task);
+
+  renderAll();
+  savePlan();
+  showToast('Task reordered');
+});
+
+document.addEventListener('dragend', function(e){
+  document.querySelectorAll('.tr-p.dragging').forEach(function(el){ el.classList.remove('dragging'); });
+  document.querySelectorAll('.tr-p.drag-over').forEach(function(el){ el.classList.remove('drag-over'); });
+  dragSrcEl = null;
+  dragSrcTaskId = null;
+});
+
 </script>
 </body>
 </html>
