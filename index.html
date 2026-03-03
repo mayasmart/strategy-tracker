@@ -1973,10 +1973,10 @@ function openEditStandingDeliverable(goalN, delivTitle){
     };
   }
 
-  renderBox();
   overlay.appendChild(box);
   document.body.appendChild(overlay);
   overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+  renderBox();
 }
 
 function openAddStandingDeliverable(goalN){
