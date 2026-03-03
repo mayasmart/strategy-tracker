@@ -1097,10 +1097,22 @@ function getFirstUncompletedTask(d){
 
 function getFocusTasks(){
   var tasks = [];
+  var currentMonthWeeks = weeksInMonth(CURRENT_MONTH_NAME);
   MD.forEach(function(g){
     g.delivs.forEach(function(d){
-      var t = getFirstUncompletedTask(d);
-      if(t) tasks.push({task:t, goal:g, deliv:d});
+      if(d.standing){
+        var t = getFirstUncompletedTask(d);
+        if(t) tasks.push({task:t, goal:g, deliv:d});
+      } else {
+        // Only consider tasks assigned to the current month
+        var monthTasks = d.tasks.filter(function(t){ return currentMonthWeeks.indexOf(t.week||CURRENT_WEEK_ISO)>=0; });
+        for(var i=0; i<monthTasks.length; i++){
+          if(!isTaskComplete(monthTasks[i], d)){
+            tasks.push({task:monthTasks[i], goal:g, deliv:d});
+            break;
+          }
+        }
+      }
     });
   });
   return tasks;
