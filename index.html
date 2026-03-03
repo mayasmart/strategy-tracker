@@ -234,14 +234,13 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
 .today-hdr{padding:14px 22px 12px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#FFFDF5,#FFF9E6);border-bottom:1px solid #f0ead0}
 .today-hdr-l{display:flex;align-items:center;gap:9px}
 .today-title{font-family:var(--fd);font-size:1.15rem;color:var(--dt)}
-.today-date{font-size:.72rem;color:#bbb}
 .today-count{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px}
 .today-list{padding:4px 0 6px}
 .today-row{display:flex;align-items:center;gap:10px;padding:9px 22px;border-bottom:1px solid #f5f5f5;transition:background .1s}
 .today-row:last-child{border-bottom:none}
 .today-row:hover{background:#fafafa}
 .today-row.done{opacity:.5}
-.today-src{font-size:.68rem;color:#aaa;background:#f5f5f5;padding:2px 8px;border-radius:4px;flex-shrink:0;white-space:nowrap}
+.today-src{font-size:.65rem;color:#aaa;background:#f5f5f5;padding:1px 7px;border-radius:3px;flex-shrink:0;white-space:nowrap}
 .today-empty{padding:32px;text-align:center;color:#ccc;font-size:.88rem;font-style:italic}
 .tr-p.focus-task{background:#FFFDF5;border-left:2px solid var(--go);margin-left:-2px}
 .tr-p.dragging{opacity:.4;background:#f0f0f0}
@@ -292,10 +291,9 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
     <div class="today-hdr">
       <div class="today-hdr-l">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="#D9BC52" stroke="#D9BC52" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
-        <span class="today-title">Focus</span>
-        <span class="today-count" id="today-count" style="background:#FDF7E3;color:#A07E00">0 / 0</span>
+        <span class="today-title">Action Items</span>
       </div>
-      <span class="today-date" id="today-date-label"></span>
+      <span class="today-count" id="today-count" style="background:#FDF7E3;color:#A07E00">0 / 0</span>
     </div>
     <div class="today-list" id="today-list">
       <div class="today-empty">Loading...</div>
@@ -367,16 +365,13 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
 
 <!-- WEEKLY REVIEW VIEW -->
 <div class="view" id="view-weekly">
-  <div class="w-bar">
-    <div>
-      <div style="font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:3px">Week of</div>
-      <div class="w-week" id="w-week-title">Loading...</div>
-    </div>
-    <div class="w-stats">
-      <div style="text-align:center"><div class="wsn" style="color:var(--t)" id="ws-total">—</div><div class="wsl">Tasks</div></div>
-      <div style="text-align:center"><div class="wsn" style="color:#D6F0E0" id="ws-complete">—</div><div class="wsl">Complete</div></div>
-      <div style="text-align:center"><div class="wsn" style="color:var(--go)" id="ws-inprog">—</div><div class="wsl">In Progress</div></div>
-      <div style="text-align:center"><div class="wsn" style="color:rgba(255,255,255,.7)" id="ws-pct">—</div><div class="wsl">Done</div></div>
+  <div class="pg-hdr">
+    <div><div class="pg-title">Weekly Review</div><div class="pg-sub" id="wr-week-sub">Loading...</div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <a class="print-btn" href="#" onclick="printWeeklyReview();return false">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
+        Print Weekly Review
+      </a>
     </div>
   </div>
 
@@ -386,12 +381,7 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
     <div style="background:var(--wh);border:1.5px solid #ddd;border-radius:6px;padding:5px 16px;font-family:var(--fb);font-size:.82rem;font-weight:600;color:var(--dt)" id="week-label">Loading...</div>
     <button class="week-btn" onclick="shiftWeek(1)">Next →</button>
     <span style="font-size:.72rem;color:#aaa;margin-left:4px" id="week-note"></span>
-    <div style="margin-left:auto;display:flex;gap:8px">
-      <a class="print-btn" href="#" onclick="printWeeklyReview();return false">
-        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
-        Print Weekly Review
-      </a>
-    </div>
+    
   </div>
 
   <!-- Summary strip -->
@@ -970,7 +960,7 @@ function renderWeeklyReview(){
   // Update header
   var monday = isoWeekToMonday(viewingWeek);
   var opts = {month:'long', day:'numeric', year:'numeric'};
-  document.getElementById('w-week-title').textContent = monday.toLocaleDateString('en-US', opts);
+  var el_wrsub = document.getElementById('wr-week-sub'); if(el_wrsub) el_wrsub.textContent = 'Week of ' + monday.toLocaleDateString('en-US', opts);
   document.getElementById('week-label').textContent = formatWeekLabel(viewingWeek);
   document.getElementById('week-note').textContent = getWeekNote(viewingWeek);
 
@@ -1080,10 +1070,8 @@ function renderStandingCard(d, g, isCurrent){
 // RENDER — TODAY'S FOCUS
 // ═══════════════════════════════════════════════════════════
 function isTaskComplete(t, d){
-  // Checkbox-style tasks: check weekData status
   var ws = getWeekStatus(t.id);
   if(ws === 'cp') return true;
-  // Count tasks with target: complete when count >= target
   if(d.standing && (t.type||'count') === 'count' && t.target !== null && t.target !== undefined){
     var wc = getWeekCount(t.id);
     if(wc !== null && wc >= t.target) return true;
@@ -1092,7 +1080,6 @@ function isTaskComplete(t, d){
 }
 
 function isTaskCountable(t, d){
-  // Returns false for count tasks without a target (they don't count toward done/total)
   if(d.standing && (t.type||'count') === 'count' && (t.target === null || t.target === undefined)) return false;
   return true;
 }
@@ -1115,17 +1102,14 @@ function getFocusTasks(){
   });
   return tasks;
 }
-
 function renderToday(){
   var list = document.getElementById('today-list');
   var countEl = document.getElementById('today-count');
-  var dateLabel = document.getElementById('today-date-label');
   var dateSub = document.getElementById('today-date-sub');
   if(!list) return;
 
   var now = new Date();
   var dateStr = now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-  if(dateLabel) dateLabel.textContent = dateStr;
   if(dateSub) dateSub.textContent = dateStr;
 
   var focusTasks = getFocusTasks();
@@ -1150,18 +1134,19 @@ function renderToday(){
 
       return '<div class="today-row">'
         +'<div style="width:7px;height:7px;border-radius:50%;background:'+g.c+';flex-shrink:0"></div>'
-        +'<div class="wtt" style="flex:1">'+t.t+'</div>'
-        +'<div class="rec-wrap">'
+        +'<div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">'
+        +'<span class="wtt">'+t.t+'</span>'
+        +'<span class="today-src">'+d.t+'</span>'
+        +'</div>'
+        +'<div class="rec-wrap" style="margin-left:auto;flex-shrink:0">'
         +'<input class="rec-inp'+(cls?' '+cls:'')+'" type="number" min="0" value="'+(v>0?v:'')+'" placeholder="\u2014"'
         +' oninput="updRecurring(this,\''+t.id+'\','+(hasTgt?tgt:'null')+','+g.n+');renderToday()">'
         +(hasTgt ? '<span class="rec-target">/ '+tgt+'</span>' : '<span class="rec-target">this wk</span>')
         +(hasTgt ? status : '')
         +'</div>'
-        +'<span class="today-src">'+d.t+'</span>'
         +'</div>';
     }
 
-    // Checkbox-style task
     var isDone = ws === 'cp';
     var ck = ws==='cp' ? ' cp' : ws==='ip' ? ' ip' : '';
     var chk = ws==='cp' ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
@@ -1169,24 +1154,25 @@ function renderToday(){
     return '<div class="today-row'+(isDone?' done':'')+'">'
       +'<div class="wck'+ck+'" onclick="toggleTask(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\');renderToday()">'+chk+'</div>'
       +'<div style="width:7px;height:7px;border-radius:50%;background:'+g.c+';flex-shrink:0"></div>'
-      +'<div class="wtt" style="flex:1;'+(isDone?'text-decoration:line-through':'')+'">'+ t.t+'</div>'
-      +'<select class="sel '+ws+'" onchange="cSel(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\');renderToday()">'
+      +'<div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">'
+      +'<span class="wtt" style="'+(isDone?'text-decoration:line-through':'')+'">'+t.t+'</span>'
+      +'<span class="today-src">'+d.t+'</span>'
+      +'</div>'
+      +'<select class="sel '+ws+'" style="margin-left:auto;flex-shrink:0" onchange="cSel(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\');renderToday()">'
       +'<option'+(ws==='ns'?' selected':'')+'>Not Started</option>'
       +'<option'+(ws==='ip'?' selected':'')+'>In Progress</option>'
       +'<option'+(ws==='cp'?' selected':'')+'>Complete</option>'
       +'<option'+(ws==='oh'?' selected':'')+'>On Hold</option>'
       +'</select>'
-      +'<span class="today-src">'+d.t+'</span>'
       +'</div>';
   }).join('');
 
   list.innerHTML = rowsHtml;
 
-  // Count done: exclude targetless count tasks from denominator
   var doneCount = 0, totalCountable = 0;
   focusTasks.forEach(function(ft){
     var t = ft.task, d = ft.deliv;
-    if(!isTaskCountable(t, d)) return; // skip targetless counts
+    if(!isTaskCountable(t, d)) return;
     totalCountable++;
     if(isTaskComplete(t, d)) doneCount++;
   });
@@ -1230,6 +1216,7 @@ function renderPlanFilterBar(){
 function setPlanFilter(type, value){
   if(type === 'month') planFilterMonth = value;
   if(type === 'goal')  planFilterGoal  = value;
+  renderToday();
   renderPlanFilterBar();
   renderPlan();
 }
@@ -1258,15 +1245,15 @@ function renderPlan(){
       var isStanding = d.standing;
       var tasksHtml = '';
       if(isStanding){
-        var _firstUncompS = null;
-        for(var _fsi=0;_fsi<d.tasks.length;_fsi++){ if(!isTaskComplete(d.tasks[_fsi],d)){_firstUncompS=d.tasks[_fsi].id;break;} }
+        var _fUS=null;
+        for(var _i=0;_i<d.tasks.length;_i++){if(!isTaskComplete(d.tasks[_i],d)){_fUS=d.tasks[_i].id;break;}}
         tasksHtml = d.tasks.map(function(t){
           var taskType = t.type||'count';
-          var _focusS = t.id===_firstUncompS ? ' focus-task' : '';
+          var _fcS = t.id===_fUS ? ' focus-task' : '';
           var typeLabel = taskType === 'count'
             ? '<span style="font-size:.68rem;color:#bbb;flex-shrink:0">'+(t.target ? '/ '+t.target+' / wk' : 'count')+'</span>'
             : '<span style="font-size:.68rem;color:#bbb;flex-shrink:0">checkbox</span>';
-          return '<div class="tr-p'+_focusS+'" style="padding-left:36px" draggable="true" data-task-id="'+t.id+'" data-goal="'+g.n+'" data-deliv="'+d.t.replace(/"/g,'&quot;')+'"><span class="drag-handle">&#9776;</span><div class="tt-p">'+t.t+'</div>'
+          return '<div class="tr-p'+_fcS+'" style="padding-left:36px" draggable="true" data-task-id="'+t.id+'" data-goal="'+g.n+'" data-deliv="'+d.t.replace(/"/g,'&quot;')+'"><span class="drag-handle">&#9776;</span><div class="tt-p">'+t.t+'</div>'
             +typeLabel
             +'<button class="btn-ic" onclick="openEditTask('+g.n+',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">✎</button></div>';
         }).join('');
@@ -1274,13 +1261,13 @@ function renderPlan(){
         var visibleTasks = filterWeeks
           ? d.tasks.filter(function(t){ return filterWeeks.indexOf(t.week||CURRENT_WEEK_ISO) >= 0; })
           : d.tasks;
-        var _firstUncompNS = null;
-        for(var _fni=0;_fni<visibleTasks.length;_fni++){ if(!isTaskComplete(visibleTasks[_fni],d)){_firstUncompNS=visibleTasks[_fni].id;break;} }
+        var _fUNS=null;
+        for(var _j=0;_j<visibleTasks.length;_j++){if(!isTaskComplete(visibleTasks[_j],d)){_fUNS=visibleTasks[_j].id;break;}}
         tasksHtml = visibleTasks.map(function(t){
           var isPast = isWeekPast(t.week);
           var badgeCls = isPast ? 'wk-badge past' : 'wk-badge';
-          var _focusNS = t.id===_firstUncompNS ? ' focus-task' : '';
-          return '<div class="tr-p'+_focusNS+'" draggable="true" data-task-id="'+t.id+'" data-goal="'+g.n+'" data-deliv="'+d.t.replace(/"/g,'"')+'">' + '<span class="drag-handle">&#9776;</span><div class="dot-sm" style="background:'+d.c+'"></div>'
+          var _fcNS = t.id===_fUNS ? ' focus-task' : '';
+          return '<div class="tr-p'+_fcNS+'" draggable="true" data-task-id="'+t.id+'" data-goal="'+g.n+'" data-deliv="'+d.t.replace(/"/g,'&quot;')+'">' + '<span class="drag-handle">&#9776;</span><div class="dot-sm" style="background:'+d.c+'"></div>'
             +'<div class="tt-p">'+t.t+'</div>'
             +'<span class="'+badgeCls+'" onclick="openScheduleTask(\''+t.id+'\')">' + weekBadgeLabel(t.week) + '</span>'
             +'<button class="btn-ic" onclick="openEditTask('+g.n+',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">✎</button></div>';
@@ -1544,9 +1531,7 @@ function updateSummaryStrip(){
   var total = allTasks.length;
   var cp = allTasks.filter(function(t){ return getWeekStatus(t.id)==='cp'; }).length;
   var pct = total>0 ? Math.round(cp/total*100) : 0;
-  document.getElementById('ws-total').textContent = total;
-  document.getElementById('ws-complete').textContent = cp;
-  document.getElementById('ws-pct').textContent = pct+'%';
+
 
   // Deliverables in progress = at least one started task but not all complete
   var delivIP = 0;
@@ -1557,7 +1542,7 @@ function updateSummaryStrip(){
     var allDone = statuses.length > 0 && statuses.every(function(s){ return s==='cp'; });
     if(hasSome && !allDone) delivIP++;
   }); });
-  document.getElementById('ws-inprog').textContent = delivIP;
+
 
   var sumBody = document.getElementById('sum-body');
   if(!sumBody) return;
@@ -2725,74 +2710,54 @@ document.addEventListener('click', function(e){
 // ═══════════════════════════════════════════════════════════
 // DRAG-TO-REORDER TASKS IN PLAN VIEW
 // ═══════════════════════════════════════════════════════════
-var dragSrcEl = null;
-var dragSrcTaskId = null;
-
-document.addEventListener('dragstart', function(e){
-  var row = e.target.closest('.tr-p[draggable]');
-  if(!row) return;
-  dragSrcEl = row;
-  dragSrcTaskId = row.dataset.taskId;
+var dragSrcEl=null,dragSrcTaskId=null;
+document.addEventListener('dragstart',function(e){
+  var row=e.target.closest('.tr-p[draggable]');
+  if(!row)return;
+  dragSrcEl=row;dragSrcTaskId=row.dataset.taskId;
   row.classList.add('dragging');
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/plain', dragSrcTaskId);
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',dragSrcTaskId);
 });
-
-document.addEventListener('dragover', function(e){
-  var row = e.target.closest('.tr-p[draggable]');
-  if(!row || row === dragSrcEl) return;
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  document.querySelectorAll('.tr-p.drag-over').forEach(function(el){ el.classList.remove('drag-over'); });
+document.addEventListener('dragover',function(e){
+  var row=e.target.closest('.tr-p[draggable]');
+  if(!row||row===dragSrcEl)return;
+  e.preventDefault();e.dataTransfer.dropEffect='move';
+  document.querySelectorAll('.tr-p.drag-over').forEach(function(el){el.classList.remove('drag-over');});
   row.classList.add('drag-over');
 });
-
-document.addEventListener('dragleave', function(e){
-  var row = e.target.closest('.tr-p[draggable]');
-  if(row) row.classList.remove('drag-over');
+document.addEventListener('dragleave',function(e){
+  var row=e.target.closest('.tr-p[draggable]');
+  if(row)row.classList.remove('drag-over');
 });
-
-document.addEventListener('drop', function(e){
+document.addEventListener('drop',function(e){
   e.preventDefault();
-  document.querySelectorAll('.tr-p.drag-over').forEach(function(el){ el.classList.remove('drag-over'); });
-  document.querySelectorAll('.tr-p.dragging').forEach(function(el){ el.classList.remove('dragging'); });
-
-  var targetRow = e.target.closest('.tr-p[draggable]');
-  if(!targetRow || !dragSrcEl || targetRow === dragSrcEl) return;
-
-  var srcId = dragSrcTaskId;
-  var tgtId = targetRow.dataset.taskId;
-  var goalN = parseInt(targetRow.dataset.goal);
-  var delivTitle = targetRow.dataset.deliv;
-
-  if(parseInt(dragSrcEl.dataset.goal) !== goalN || dragSrcEl.dataset.deliv !== delivTitle) return;
-
-  var g = MD.find(function(g){ return g.n === goalN; });
-  if(!g) return;
-  var d = g.delivs.find(function(d){ return d.t === delivTitle; });
-  if(!d) return;
-
-  var srcIdx = -1, tgtIdx = -1;
+  document.querySelectorAll('.tr-p.drag-over').forEach(function(el){el.classList.remove('drag-over');});
+  document.querySelectorAll('.tr-p.dragging').forEach(function(el){el.classList.remove('dragging');});
+  var targetRow=e.target.closest('.tr-p[draggable]');
+  if(!targetRow||!dragSrcEl||targetRow===dragSrcEl)return;
+  var srcId=dragSrcTaskId,tgtId=targetRow.dataset.taskId;
+  var goalN=parseInt(targetRow.dataset.goal),delivTitle=targetRow.dataset.deliv;
+  if(parseInt(dragSrcEl.dataset.goal)!==goalN||dragSrcEl.dataset.deliv!==delivTitle)return;
+  var g=MD.find(function(g){return g.n===goalN;});
+  if(!g)return;
+  var d=g.delivs.find(function(d){return d.t===delivTitle;});
+  if(!d)return;
+  var srcIdx=-1,tgtIdx=-1;
   for(var i=0;i<d.tasks.length;i++){
-    if(d.tasks[i].id === srcId) srcIdx = i;
-    if(d.tasks[i].id === tgtId) tgtIdx = i;
+    if(d.tasks[i].id===srcId)srcIdx=i;
+    if(d.tasks[i].id===tgtId)tgtIdx=i;
   }
-  if(srcIdx < 0 || tgtIdx < 0) return;
-
+  if(srcIdx<0||tgtIdx<0)return;
   pushUndo('Reorder tasks');
-  var task = d.tasks.splice(srcIdx, 1)[0];
-  d.tasks.splice(tgtIdx, 0, task);
-
-  renderAll();
-  savePlan();
-  showToast('Task reordered');
+  var task=d.tasks.splice(srcIdx,1)[0];
+  d.tasks.splice(tgtIdx,0,task);
+  renderAll();savePlan();showToast('Task reordered');
 });
-
-document.addEventListener('dragend', function(e){
-  document.querySelectorAll('.tr-p.dragging').forEach(function(el){ el.classList.remove('dragging'); });
-  document.querySelectorAll('.tr-p.drag-over').forEach(function(el){ el.classList.remove('drag-over'); });
-  dragSrcEl = null;
-  dragSrcTaskId = null;
+document.addEventListener('dragend',function(e){
+  document.querySelectorAll('.tr-p.dragging').forEach(function(el){el.classList.remove('dragging');});
+  document.querySelectorAll('.tr-p.drag-over').forEach(function(el){el.classList.remove('drag-over');});
+  dragSrcEl=null;dragSrcTaskId=null;
 });
 
 </script>
