@@ -536,22 +536,15 @@ function updateAuthUI(loggedIn, email){
 // ═══════════════════════════════════════════════════════════
 // SHEETS API
 // ═══════════════════════════════════════════════════════════
-// Encode range for Sheets API URL — only encode the tab name, not A1 notation characters
-function encodeSheetRange(range){
-  var parts = range.split('!');
-  if(parts.length < 2) return encodeURIComponent(range);
-  return encodeURIComponent(parts[0]) + '!' + parts[1];
-}
-
 async function sheetsGet(sheetId, range){
-  var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+encodeSheetRange(range);
+  var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+encodeURIComponent(range);
   var resp = await fetch(url,{headers:{'Authorization':'Bearer '+accessToken}});
   if(resp.status===401){ if(await refreshToken()) return sheetsGet(sheetId,range); throw new Error('Unauthorized'); }
   return resp.json();
 }
 
 async function sheetsUpdate(sheetId, range, values){
-  var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+encodeSheetRange(range)+'?valueInputOption=USER_ENTERED';
+  var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+encodeURIComponent(range)+'?valueInputOption=USER_ENTERED';
   var resp = await fetch(url,{
     method:'PUT',
     headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
@@ -563,7 +556,7 @@ async function sheetsUpdate(sheetId, range, values){
 }
 
 async function sheetsClear(sheetId, range){
-  var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+encodeSheetRange(range)+':clear';
+  var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+encodeURIComponent(range)+':clear';
   var resp = await fetch(url,{
     method:'POST',
     headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'}
