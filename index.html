@@ -356,7 +356,7 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
         <th style="width:15%">2026 Goal</th>
         <th style="width:19%" id="th-q">Q1 Strategy</th>
         <th style="width:24%" id="th-d">Deliverables</th>
-        <th>This Week's Tasks</th>
+        <th id="th-t">This Week's Tasks</th>
       </tr></thead>
       <tbody id="map-tbody"></tbody>
     </table>
@@ -1353,7 +1353,7 @@ function renderMap(month,q){
       var ws2=getWeekStatus(t.id);
       return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+(cm[ws2]||cm.ns)+'">'+(cl[ws2]||'Not Started')+'</span></div>';
     }
-    var ws=getWeekStatus(t.id);
+    var ws=getStatusForWeek(t.id, t.week||CURRENT_WEEK_ISO);
     return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+(cm[ws]||cm.ns)+'">'+(cl[ws]||'Not Started')+'</span></div>';
   }
 
@@ -1525,6 +1525,16 @@ function getWeekCount(taskId){
   return (wd && wd[taskId] && wd[taskId].count !== undefined && wd[taskId].count !== null) ? wd[taskId].count : null;
 }
 
+function getStatusForWeek(taskId, week){
+  var wd = weekData[week];
+  return (wd && wd[taskId] && wd[taskId].status) ? wd[taskId].status : 'ns';
+}
+
+function getCountForWeek(taskId, week){
+  var wd = weekData[week];
+  return (wd && wd[taskId] && wd[taskId].count !== undefined && wd[taskId].count !== null) ? wd[taskId].count : null;
+}
+
 function updateSummaryStrip(){
   var allTasks = [];
   MD.forEach(function(g){ g.delivs.forEach(function(d){ if(!d.standing) d.tasks.filter(function(t){ return (t.week||CURRENT_WEEK_ISO)===viewingWeek; }).forEach(function(t){ allTasks.push(t); }); }); });
@@ -1653,6 +1663,7 @@ function selM(btn, month, q){
   btn.classList.add('active','hd');
   document.getElementById('th-q').textContent=q+' Strategy';
   document.getElementById('th-d').textContent=month+' Deliverables';
+  document.getElementById('th-t').textContent=(month===CURRENT_MONTH_NAME)?"This Week's Tasks":month+' Tasks';
   renderMap(month,q);
 }
 
@@ -2546,7 +2557,7 @@ function printStrategyOverview(){
             +'<span style="font-size:9px;color:#444;flex:1">'+t.t+'</span>'
             +'<span style="font-size:8px;font-weight:600;padding:1px 5px;border-radius:4px;'+statusColorP[ps2]+'">'+statusLabelP[ps2]+'</span></div>';
         }
-        var ps=getWeekStatus(t.id);
+        var ps=getStatusForWeek(t.id, t.week||CURRENT_WEEK_ISO);
         return '<div style="display:flex;align-items:center;gap:5px;padding:2px 0">'
           +'<span style="font-size:9px;color:#444;flex:1">'+t.t+'</span>'
           +'<span style="font-size:8px;font-weight:600;padding:1px 5px;border-radius:4px;'+statusColorP[ps]+'">'+statusLabelP[ps]+'</span></div>';
@@ -2583,8 +2594,8 @@ function printStrategyOverview(){
     +'<div style="font-size:9px;color:#999;margin-top:1px">'+monthStr+'</div></div>'
     +'<span style="font-size:9px;color:#aaa">Maya Smart</span></div>'
     +'<table><thead><tr>'
-    +'<th style="width:16%">2026 Goal</th><th style="width:20%">Q1 Strategy</th>'
-    +'<th style="width:25%">February Deliverables</th><th>This Week\'s Tasks</th></tr></thead>'
+    +'<th style="width:16%">2026 Goal</th><th style="width:20%">'+(document.getElementById('th-q')?document.getElementById('th-q').textContent:'Q1 Strategy')+'</th>'
+    +'<th style="width:25%">'+(document.getElementById('th-d')?document.getElementById('th-d').textContent:'Deliverables')+'</th><th>'+(document.getElementById('th-t')?document.getElementById('th-t').textContent:'Tasks')+'</th></tr></thead>'
     +'<tbody>'+rowsHtml+'</tbody></table>'
     +'<div style="margin-top:12px;padding-top:6px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:8px;color:#aaa">'
     +'<span>Maya Smart · 2026 Strategy Tracker</span><span>Printed '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'</span></div>'
