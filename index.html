@@ -818,31 +818,32 @@ function saveScorecardVal(goalN, month, value, notes){
 
 function savePlan(){
   if(!isSignedIn()) return;
-  var rows = [['GoalN','GoalYear','GoalTitle','GoalColor','GoalLight','GoalDark','GoalTarget','GoalType','GoalLabel','GoalStrategy','GoalQuarters','DelivTitle','DelivColor','DelivStanding','TaskID','TaskTitle','TaskStatus','TaskCount','TaskTarget','TaskWeek','TaskType']];
+  var rows = [['GoalN','GoalYear','GoalTitle','GoalColor','GoalLight','GoalDark','GoalTarget','GoalType','GoalLabel','GoalStrategy','GoalQuarters','DelivTitle','DelivColor','DelivStanding','DelivMonth','TaskID','TaskTitle','TaskStatus','TaskCount','TaskTarget','TaskWeek','TaskType']];
   MD.forEach(function(g){
     if(!g.delivs || g.delivs.length === 0){
       // Goal with no deliverables — still write one row
-      rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), '', '', '', '', '', '', '', '', '']);
+      rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), '', '', '', '', '', '', '', '', '', '', '']);
       return;
     }
     g.delivs.forEach(function(d){
       if(!d.tasks || d.tasks.length === 0){
-        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', '', '', '', '', '', '']);
+        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', d.month||'', '', '', '', '', '', '', '']);
         return;
       }
       d.tasks.forEach(function(t){
-        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', t.id, t.t, t.s||'ns', t.count!==null&&t.count!==undefined?t.count:'', t.target!==null&&t.target!==undefined?t.target:'', t.week||CURRENT_WEEK_ISO, t.type||(d.standing?'count':'')  ]);
+        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', d.month||'', t.id, t.t, t.s||'ns', t.count!==null&&t.count!==undefined?t.count:'', t.target!==null&&t.target!==undefined?t.target:'', t.week||CURRENT_WEEK_ISO, t.type||(d.standing?'count':'')  ]);
       });
     });
   });
   // Write entire Plan sheet — clear then rewrite
-  queueSave('Plan!A1:U'+rows.length, rows);
+  // Use fixed key 'Plan!A1' so rapid saves always replace each other in pendingChanges
+  queueSave('Plan!A1:V1000', rows);
 }
 
 async function loadPlanData(){
   if(!isSignedIn()) return;
   try{
-    var data = await sheetsGet(SHEET_ID, 'Plan!A:U');
+    var data = await sheetsGet(SHEET_ID, 'Plan!A:V');
     var rows = data.values || [];
     if(rows.length < 2) return; // no data yet
     var newMD = [];
@@ -878,18 +879,19 @@ async function loadPlanData(){
         if(!isStanding) delete d.standing;
         g.delivs.push(d);
       }
-      var taskId = row[14]||'';
+      if(row[14]) d.month = row[14]; // DelivMonth
+      var taskId = row[15]||'';
       if(!taskId) return;
-      var tcount = row[17]!==''&&row[17]!==undefined ? parseInt(row[17])||0 : null;
-      var ttarget = row[18]!==''&&row[18]!==undefined ? parseInt(row[18]) : null;
-      var ttype = row[20] || (isStanding ? 'count' : undefined);
+      var tcount = row[18]!==''&&row[18]!==undefined ? parseInt(row[18])||0 : null;
+      var ttarget = row[19]!==''&&row[19]!==undefined ? parseInt(row[19]) : null;
+      var ttype = row[21] || (isStanding ? 'count' : undefined);
       d.tasks.push({
         id: taskId,
-        t: row[15]||'',
-        s: row[16]||'ns',
+        t: row[16]||'',
+        s: row[17]||'ns',
         count: tcount,
         target: ttarget,
-        week: row[19]||CURRENT_WEEK_ISO,
+        week: row[20]||CURRENT_WEEK_ISO,
         type: ttype
       });
     });
@@ -1085,8 +1087,8 @@ function renderPlan(){
         }).join('');
         tasksHtml += '<div class="add-r"><button class="btn btn-g btn-sm" onclick="openAddTask('+g.n+',\''+d.t.replace(/'/g,"\\'")+'\')">+ Task</button></div>';
       }
-      // When month-filtering, hide non-standing deliverables with no visible tasks
-      if(filterWeeks && !isStanding && !tasksHtml.replace(/<div class="add-r">.*<\/div>/,'').trim()) return '';
+      // When month-filtering, hide non-standing deliverables not in the selected month
+      if(filterWeeks && !isStanding && d.month && d.month !== planFilterMonth) return '';
       return '<div class="db"><div class="dh" style="border-left-color:'+d.c+'">'
         +'<div class="dot-lg" style="background:'+d.c+'"></div>'
         +'<div class="dt2">'+d.t+'</div>'
@@ -1757,10 +1759,14 @@ function openEditDeliverable(goalN, delivTitle){
     return '<div onclick="selEDC('+i+')" id="edc-swatch-'+i+'" style="width:22px;height:22px;border-radius:50%;background:'+col+';cursor:pointer;border:3px solid '+(col===d.c?'#333':'transparent')+';transition:border .15s"></div>';
   }).join('');
 
+  var edMonths = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var edMonthOpts = edMonths.map(function(m){ return '<option value="'+m+'"'+(d.month===m?' selected':'')+'>'+m+'</option>'; }).join('');
   box.innerHTML = '<div style="font-family:var(--fd);font-size:1.1rem;color:var(--dt);margin-bottom:6px">Edit Deliverable</div>'
     +'<div style="font-size:.78rem;color:#aaa;margin-bottom:18px">Goal '+goalN+' · '+g.t+'</div>'
     +'<div style="margin-bottom:12px"><label style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:4px">Title</label>'
     +'<input id="ed-title" value="'+d.t+'" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.9rem;outline:none"></div>'
+    +'<div style="margin-bottom:12px"><label style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:4px">Target Month</label>'
+    +'<select id="ed-month" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.9rem;outline:none">'+edMonthOpts+'</select></div>'
     +'<div style="margin-bottom:20px"><label style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:8px">Color</label>'
     +'<div style="display:flex;gap:10px">'+swatchHtml+'</div></div>'
     +'<div style="display:flex;gap:8px;justify-content:flex-end">'
@@ -1791,6 +1797,7 @@ function openEditDeliverable(goalN, delivTitle){
     if(!title){ inp.style.borderColor='#e55'; return; }
     d.t = title;
     d.c = colorOptions[selectedColor];
+    d.month = document.getElementById('ed-month').value;
     overlay.remove();
     renderAll(); savePlan();
     showToast('Deliverable updated');
