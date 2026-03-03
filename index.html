@@ -687,12 +687,15 @@ function applyUndo(){
   showToast('Undone: '+entry.label);
 }
 
+var retryDelay = 150; // grows on repeated failures
 function queueSave(range, values){
   if(!isSignedIn()) return;
+  // Deduplicate by tab name — if we already have a pending save for this tab, replace it
+  var tab = range.split('!')[0];
+  Object.keys(pendingChanges).forEach(function(k){ if(k.split('!')[0] === tab) delete pendingChanges[k]; });
   pendingChanges[range] = values;
   showSaveIndicator('pending');
   clearTimeout(saveTimer);
-  // 150ms debounce — batches rapid keystrokes but feels instant
   saveTimer = setTimeout(flushSave, 150);
 }
 
@@ -707,7 +710,6 @@ function showSaveIndicator(state){
 async function flushSave(){
   if(!isSignedIn() || Object.keys(pendingChanges).length === 0) return;
   if(isSaving){
-    // Already saving — reschedule to run after current save finishes
     saveTimer = setTimeout(flushSave, 200);
     return;
   }
@@ -718,28 +720,28 @@ async function flushSave(){
     var ranges = Object.keys(toSave);
     for(var i = 0; i < ranges.length; i++){
       var range = ranges[i];
-      // Write data
       await sheetsUpdate(SHEET_ID, range, toSave[range]);
-      // Clear any leftover rows beyond what we just wrote (non-fatal if this fails)
+      // Clear leftover rows beyond what we wrote (non-fatal)
       if(range.startsWith('Plan!') || range.startsWith('Weekly Review!')){
         var tabName = range.split('!')[0];
+        var colEnd = range.split(':')[1].replace(/[0-9]+/,'');
         var rowCount = toSave[range].length;
-        try{ await sheetsClear(SHEET_ID, tabName+'!A'+(rowCount+1)+':ZZ'); }
+        try{ await sheetsClear(SHEET_ID, tabName+'!A'+(rowCount+1)+':'+colEnd+(rowCount+500)); }
         catch(ce){ console.warn('Clear stale rows failed (non-fatal):', ce); }
       }
     }
+    retryDelay = 150;
     showSaveIndicator('saved');
   }catch(e){
     console.error('Save failed:', e);
-    // Put failed changes back so they retry
     Object.assign(pendingChanges, toSave);
     showSaveIndicator('error');
     showToast('Save failed: ' + (e.message||e), true);
+    retryDelay = Math.min(retryDelay * 2, 30000);
   }
   isSaving = false;
-  // If more changes queued while we were saving, flush them now
   if(Object.keys(pendingChanges).length > 0){
-    saveTimer = setTimeout(flushSave, 150);
+    saveTimer = setTimeout(flushSave, retryDelay);
   }
 }
 
@@ -840,7 +842,7 @@ function saveWeeklyData(){
       rows.push([wk, taskId, goalN, delivTitle, taskObj.t, entry.status||'ns', entry.count||'', '', entry.notes||'']);
     });
   });
-  queueSave('Weekly Review!A1:I1000', rows);
+  queueSave('Weekly Review!A1:I'+rows.length, rows);
 }
 
 function saveTaskStatus(taskId, goalN, delivTitle, taskTitle, status, count, notes){
@@ -902,7 +904,7 @@ function savePlan(){
   });
   // Write entire Plan sheet — clear then rewrite
   // Use fixed key 'Plan!A1' so rapid saves always replace each other in pendingChanges
-  queueSave('Plan!A1:V1000', rows);
+  queueSave('Plan!A1:V'+rows.length, rows);
 }
 
 async function loadPlanData(){
