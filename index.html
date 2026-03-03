@@ -722,7 +722,7 @@ async function flushSave(){
       var range = ranges[i];
       await sheetsUpdate(SHEET_ID, range, toSave[range]);
       // Clear leftover rows beyond what we wrote (non-fatal)
-      if(range.startsWith('Plan!') || range.startsWith('Weekly Review!')){
+      if(range.startsWith('Plan!') || range.startsWith("'Plan'!") || range.startsWith('Weekly Review!') || range.startsWith("'Weekly Review'!")){
         var tabName = range.split('!')[0];
         var colEnd = range.split(':')[1].replace(/[0-9]+/,'');
         var rowCount = toSave[range].length;
@@ -749,7 +749,7 @@ async function flushSave(){
 async function loadWeeklyData(isoWeek){
   if(!isSignedIn()) return;
   try{
-    var data = await sheetsGet(SHEET_ID, 'Weekly Review!A:I');
+    var data = await sheetsGet(SHEET_ID, "'Weekly Review'!A:I");
     var rows = data.values || [];
     // Parse rows: [Week, TaskID, Goal#, Deliverable, Task, Status, RecurringCount, RecurringTarget, Notes]
     // Load all weeks at once so navigation to past/future weeks works
@@ -842,7 +842,7 @@ function saveWeeklyData(){
       rows.push([wk, taskId, goalN, delivTitle, taskObj.t, entry.status||'ns', entry.count||'', '', entry.notes||'']);
     });
   });
-  queueSave('Weekly Review!A1:I'+rows.length, rows);
+  queueSave("'Weekly Review'!A1:I"+rows.length, rows);
 }
 
 function saveTaskStatus(taskId, goalN, delivTitle, taskTitle, status, count, notes){
