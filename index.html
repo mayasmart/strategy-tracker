@@ -1115,7 +1115,8 @@ function renderPlan(){
         tasksHtml += '<div class="add-r"><button class="btn btn-g btn-sm" onclick="openAddTask('+g.n+',\''+d.t.replace(/'/g,"\\'")+'\')">+ Task</button></div>';
       }
       // When month-filtering, hide non-standing deliverables not in the selected month
-      if(filterWeeks && !isStanding && d.month && d.month !== planFilterMonth) return '';
+      // Also hide if month is unset (it hasn't been assigned yet)
+      if(filterWeeks && !isStanding && d.month !== planFilterMonth) return '';
       return '<div class="db"><div class="dh" style="border-left-color:'+d.c+'">'
         +'<div class="dot-lg" style="background:'+d.c+'"></div>'
         +'<div class="dt2">'+d.t+'</div>'
