@@ -1744,7 +1744,6 @@ function shiftWeek(delta){
   // Initialize empty weekData for this week if not already loaded
   if(!weekData[viewingWeek]) weekData[viewingWeek] = {};
   renderWeeklyReview();
-  if(isSignedIn()) loadWeeklyData(viewingWeek).then(renderWeeklyReview);
 }
 
 function selYear(y){
