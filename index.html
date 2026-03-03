@@ -901,24 +901,19 @@ async function loadPlanData(){
         if(!isStanding) delete d.standing;
         g.delivs.push(d);
       }
-      // Support both old schema (no DelivMonth, TaskID at col 14) and new (DelivMonth at 14, TaskID at 15)
-      // Detect by checking if col 14 looks like a task ID (starts with T) or a month name
-      var hasDelivMonth = row[14] && /^[A-Z][a-z]+$/.test(row[14]) && !row[14].startsWith('T');
-      var monthCol = hasDelivMonth ? 14 : -1;
-      var taskIdCol = hasDelivMonth ? 15 : 14;
-      if(monthCol >= 0 && row[monthCol]) d.month = row[monthCol];
-      var taskId = row[taskIdCol]||'';
+      if(row[14]) d.month = row[14]; // DelivMonth (col O)
+      var taskId = row[15]||'';
       if(!taskId) return;
-      var tcount = row[taskIdCol+3]!==''&&row[taskIdCol+3]!==undefined ? parseInt(row[taskIdCol+3])||0 : null;
-      var ttarget = row[taskIdCol+4]!==''&&row[taskIdCol+4]!==undefined ? parseInt(row[taskIdCol+4]) : null;
-      var ttype = row[taskIdCol+6] || (isStanding ? 'count' : undefined);
+      var tcount = row[18]!==''&&row[18]!==undefined ? parseInt(row[18])||0 : null;
+      var ttarget = row[19]!==''&&row[19]!==undefined ? parseInt(row[19]) : null;
+      var ttype = row[21] || (isStanding ? 'count' : undefined);
       d.tasks.push({
         id: taskId,
-        t: row[taskIdCol+1]||'',
-        s: row[taskIdCol+2]||'ns',
+        t: row[16]||'',
+        s: row[17]||'ns',
         count: tcount,
         target: ttarget,
-        week: row[taskIdCol+5]||CURRENT_WEEK_ISO,
+        week: row[20]||CURRENT_WEEK_ISO,
         type: ttype
       });
     });
@@ -1204,13 +1199,13 @@ function renderMap(month,q){
       ? visDelivs.map(function(d){return '<div class="map-di"><div class="dot-lg" style="background:'+d.c+';flex-shrink:0"></div><div class="map-dt2">'+d.t+(d.standing?' <span style="font-size:.6rem;font-weight:700;color:var(--td);background:var(--mn);padding:1px 5px;border-radius:3px">Standing</span>':'')+'</div></div>';}).join('')
       : '<div class="no-data">No '+month+' deliverables yet</div>';
     var tc=visDelivs.length
-      ? visDelivs.map(function(d,i){
+      ? (visDelivs.map(function(d,i){
           var ts=d.standing?d.tasks:d.tasks.filter(function(t){return monthWeeks.indexOf(t.week||CURRENT_WEEK_ISO)>=0;});
           var rows=ts.map(function(t){return taskChip(t,d);}).join('');
           if(!rows) return '';
           var div=i<visDelivs.length-1?'<div class="map-tdiv"></div>':'';
           return rows+div;
-        }).join('')
+        }).join('')||'<div class="no-data">No '+month+' tasks yet</div>')
       : '<div class="no-data">No '+month+' tasks yet</div>';
     return '<tr>'
       +'<td style="background:'+g.l+';border-left:5px solid '+g.c+';vertical-align:middle"><div class="map-gn" style="color:'+g.c+'">2026 GOAL '+g.n+'</div><div class="map-gt">'+g.t+'</div></td>'
