@@ -536,15 +536,22 @@ function updateAuthUI(loggedIn, email){
 // ═══════════════════════════════════════════════════════════
 // SHEETS API
 // ═══════════════════════════════════════════════════════════
+// Encode range for Sheets API URL — only encode the tab name, not A1 notation characters
+function encodeSheetRange(range){
+  var parts = range.split('!');
+  if(parts.length < 2) return encodeURIComponent(range);
+  return encodeURIComponent(parts[0]) + '!' + parts[1];
+}
+
 async function sheetsGet(sheetId, range){
-  var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+encodeURIComponent(range);
+  var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+encodeSheetRange(range);
   var resp = await fetch(url,{headers:{'Authorization':'Bearer '+accessToken}});
   if(resp.status===401){ if(await refreshToken()) return sheetsGet(sheetId,range); throw new Error('Unauthorized'); }
   return resp.json();
 }
 
 async function sheetsUpdate(sheetId, range, values){
-  var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+encodeURIComponent(range)+'?valueInputOption=USER_ENTERED';
+  var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+encodeSheetRange(range)+'?valueInputOption=USER_ENTERED';
   var resp = await fetch(url,{
     method:'PUT',
     headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
@@ -556,7 +563,7 @@ async function sheetsUpdate(sheetId, range, values){
 }
 
 async function sheetsClear(sheetId, range){
-  var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+encodeURIComponent(range)+':clear';
+  var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+encodeSheetRange(range)+':clear';
   var resp = await fetch(url,{
     method:'POST',
     headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'}
@@ -722,7 +729,7 @@ async function flushSave(){
       var range = ranges[i];
       await sheetsUpdate(SHEET_ID, range, toSave[range]);
       // Clear leftover rows beyond what we wrote (non-fatal)
-      if(range.startsWith('Plan!') || range.startsWith("'Plan'!") || range.startsWith('Weekly Review!') || range.startsWith("'Weekly Review'!")){
+      if(range.startsWith('Plan!') || range.startsWith('Weekly Review!')){
         var tabName = range.split('!')[0];
         var colEnd = range.split(':')[1].replace(/[0-9]+/,'');
         var rowCount = toSave[range].length;
@@ -749,7 +756,7 @@ async function flushSave(){
 async function loadWeeklyData(isoWeek){
   if(!isSignedIn()) return;
   try{
-    var data = await sheetsGet(SHEET_ID, "'Weekly Review'!A:I");
+    var data = await sheetsGet(SHEET_ID, 'Weekly Review!A:I');
     var rows = data.values || [];
     // Parse rows: [Week, TaskID, Goal#, Deliverable, Task, Status, RecurringCount, RecurringTarget, Notes]
     // Load all weeks at once so navigation to past/future weeks works
@@ -842,7 +849,7 @@ function saveWeeklyData(){
       rows.push([wk, taskId, goalN, delivTitle, taskObj.t, entry.status||'ns', entry.count||'', '', entry.notes||'']);
     });
   });
-  queueSave("'Weekly Review'!A1:I"+rows.length, rows);
+  queueSave('Weekly Review!A1:I'+rows.length, rows);
 }
 
 function saveTaskStatus(taskId, goalN, delivTitle, taskTitle, status, count, notes){
