@@ -1435,29 +1435,8 @@ function weeksInMonth(monthName){
 function renderMap(month,q){
   var tbody=document.getElementById('map-tbody');
   var monthWeeks=weeksInMonth(month);
-  var cm={ns:'background:#e8e8e8;color:#555',ip:'background:#FFF3CD;color:#7D5A00',cp:'background:#D6F0E0;color:#1A7A4A',oh:'background:#FFE4E4;color:#b22222'};
-  var cl={ns:'Not Started',ip:'In Progress',cp:'Complete',oh:'On Hold'};
-
   function taskChip(t,d){
-    if(d.standing){
-      var tt=t.type||'count';
-      if(tt==='count'){
-        var wc=getWeekCount(t.id); var hasTgt=t.target!==null&&t.target!==undefined;
-        var v = (wc !== null && wc !== undefined) ? wc : 0;
-        var cs,ct;
-        if(!hasTgt){cs='background:#eee;color:#888';ct=(v>0?v:'\u2014')+' this week';}
-        else if(v===0){cs='background:#eee;color:#888';ct='\u2014 / '+t.target;}
-        else if(v>=t.target){cs='background:#D6F0E0;color:#1A7A4A';ct=v+' / '+t.target+' \u2713 On target';}
-        else{cs='background:#FFF3CD;color:#7D5A00';ct=v+' / '+t.target+' \u2197 Below';}
-        return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+cs+'">'+ct+'</span></div>';
-      }
-      var ws2=getWeekStatus(t.id);
-      var ckIcon = ws2==='cp' ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:3px;background:#1A7A4A;margin-right:4px;flex-shrink:0"><svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
-        : '<span style="display:inline-flex;width:14px;height:14px;border-radius:3px;border:1.5px solid #ccc;margin-right:4px;flex-shrink:0"></span>';
-      return '<div class="map-ti">'+ckIcon+'<span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+(cm[ws2]||cm.ns)+'">'+(cl[ws2]||'Not Started')+'</span></div>';
-    }
-    var ws=getStatusForWeek(t.id, t.week||CURRENT_WEEK_ISO);
-    return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+(cm[ws]||cm.ns)+'">'+(cl[ws]||'Not Started')+'</span></div>';
+    return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span></div>';
   }
 
   tbody.innerHTML=MD.map(function(g){
