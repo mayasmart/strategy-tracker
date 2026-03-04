@@ -259,7 +259,6 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
 .today-src{font-size:.65rem;color:#aaa;background:#f5f5f5;padding:1px 7px;border-radius:3px;flex-shrink:0;white-space:nowrap}
 .today-row .wtt{flex:none}
 .today-empty{padding:32px;text-align:center;color:#ccc;font-size:.88rem;font-style:italic}
-.tr-p.focus-task{background:#FFFDF5;border-left:2px solid var(--go);margin-left:-2px}
 .tr-p.dragging{opacity:.4;background:#f0f0f0}
 .tr-p.drag-over{border-top:2px solid var(--t);margin-top:-2px}
 .tr-p[draggable="true"]{cursor:grab}
@@ -1321,15 +1320,12 @@ function renderPlan(){
       var isStanding = d.standing;
       var tasksHtml = '';
       if(isStanding){
-        var _fUS=null;
-        for(var _i=0;_i<d.tasks.length;_i++){if(!isTaskComplete(d.tasks[_i],d)){_fUS=d.tasks[_i].id;break;}}
         tasksHtml = d.tasks.map(function(t){
           var taskType = t.type||'count';
-          var _fcS = t.id===_fUS ? ' focus-task' : '';
           var typeLabel = taskType === 'count'
             ? '<span style="font-size:.68rem;color:#bbb;flex-shrink:0">'+(t.target ? '/ '+t.target+' / wk' : 'count')+'</span>'
             : '<span style="font-size:.68rem;color:#bbb;flex-shrink:0">checkbox</span>';
-          return '<div class="tr-p'+_fcS+'" style="padding-left:36px" draggable="true" data-task-id="'+t.id+'" data-goal="'+g.n+'" data-deliv="'+d.t.replace(/"/g,'&quot;')+'"><span class="drag-handle">&#9776;</span><div class="tt-p">'+t.t+'</div>'
+          return '<div class="tr-p" style="padding-left:36px" draggable="true" data-task-id="'+t.id+'" data-goal="'+g.n+'" data-deliv="'+d.t.replace(/"/g,'&quot;')+'"><span class="drag-handle">&#9776;</span><div class="tt-p">'+t.t+'</div>'
             +typeLabel
             +'<button class="btn-ic" onclick="openEditTask('+g.n+',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">✎</button></div>';
         }).join('');
@@ -1337,13 +1333,10 @@ function renderPlan(){
         var visibleTasks = filterWeeks
           ? d.tasks.filter(function(t){ return filterWeeks.indexOf(t.week||CURRENT_WEEK_ISO) >= 0; })
           : d.tasks;
-        var _fUNS=null;
-        for(var _j=0;_j<visibleTasks.length;_j++){if(!isTaskComplete(visibleTasks[_j],d)){_fUNS=visibleTasks[_j].id;break;}}
         tasksHtml = visibleTasks.map(function(t){
           var isPast = isWeekPast(t.week);
           var badgeCls = isPast ? 'wk-badge past' : 'wk-badge';
-          var _fcNS = t.id===_fUNS ? ' focus-task' : '';
-          return '<div class="tr-p'+_fcNS+'" draggable="true" data-task-id="'+t.id+'" data-goal="'+g.n+'" data-deliv="'+d.t.replace(/"/g,'&quot;')+'">' + '<span class="drag-handle">&#9776;</span><div class="dot-sm" style="background:'+d.c+'"></div>'
+          return '<div class="tr-p" draggable="true" data-task-id="'+t.id+'" data-goal="'+g.n+'" data-deliv="'+d.t.replace(/"/g,'&quot;')+'">' + '<span class="drag-handle">&#9776;</span><div class="dot-sm" style="background:'+d.c+'"></div>'
             +'<div class="tt-p">'+t.t+'</div>'
             +'<span class="'+badgeCls+'" onclick="openScheduleTask(\''+t.id+'\')">' + weekBadgeLabel(t.week) + '</span>'
             +'<button class="btn-ic" onclick="openEditTask('+g.n+',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">✎</button></div>';
@@ -1450,15 +1443,18 @@ function renderMap(month,q){
       var tt=t.type||'count';
       if(tt==='count'){
         var wc=getWeekCount(t.id); var hasTgt=t.target!==null&&t.target!==undefined;
+        var v = (wc !== null && wc !== undefined) ? wc : 0;
         var cs,ct;
-        if(!hasTgt){cs='background:#eee;color:#888';ct=(wc>0?wc:'\u2014')+' this week';}
-        else if(!wc||wc===0){cs='background:#eee;color:#888';ct='\u2014 / '+t.target;}
-        else if(wc>=t.target){cs='background:#D6F0E0;color:#1A7A4A';ct=wc+' / '+t.target+' \u2713';}
-        else{cs='background:#FFF3CD;color:#7D5A00';ct=wc+' / '+t.target+' \u2197';}
+        if(!hasTgt){cs='background:#eee;color:#888';ct=(v>0?v:'\u2014')+' this week';}
+        else if(v===0){cs='background:#eee;color:#888';ct='\u2014 / '+t.target;}
+        else if(v>=t.target){cs='background:#D6F0E0;color:#1A7A4A';ct=v+' / '+t.target+' \u2713 On target';}
+        else{cs='background:#FFF3CD;color:#7D5A00';ct=v+' / '+t.target+' \u2197 Below';}
         return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+cs+'">'+ct+'</span></div>';
       }
       var ws2=getWeekStatus(t.id);
-      return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+(cm[ws2]||cm.ns)+'">'+(cl[ws2]||'Not Started')+'</span></div>';
+      var ckIcon = ws2==='cp' ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:3px;background:#1A7A4A;margin-right:4px;flex-shrink:0"><svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
+        : '<span style="display:inline-flex;width:14px;height:14px;border-radius:3px;border:1.5px solid #ccc;margin-right:4px;flex-shrink:0"></span>';
+      return '<div class="map-ti">'+ckIcon+'<span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+(cm[ws2]||cm.ns)+'">'+(cl[ws2]||'Not Started')+'</span></div>';
     }
     var ws=getStatusForWeek(t.id, t.week||CURRENT_WEEK_ISO);
     return '<div class="map-ti"><div class="dot-sm" style="background:'+d.c+';flex-shrink:0"></div><span class="map-tt">'+t.t+'</span><span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;'+(cm[ws]||cm.ns)+'">'+(cl[ws]||'Not Started')+'</span></div>';
