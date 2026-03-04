@@ -1141,6 +1141,8 @@ async function loadPlanData(){
     if(needsRepair){
       console.warn('Auto-repairing GoalN numbering on load...');
       MD.forEach(function(g,i){ g.n = i+1; });
+      // Save repaired data back to sheet
+      setTimeout(function(){ savePlan(); console.log('Repaired Plan saved'); }, 500);
     }
   }catch(e){ console.warn('Could not load plan data', e); }
 }
@@ -2149,10 +2151,28 @@ function openEditGoal(goalN){
     +fi('Target Number','eg-target',g.target)
     +fi('Metric Label','eg-label',g.label)
     +'<div style="margin-bottom:20px"><label style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:4px">Metric Type</label><select id="eg-type" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-family:var(--fb);font-size:.9rem;outline:none">'+typeOpts+'</select></div>'
-    +'<div style="display:flex;gap:8px;justify-content:flex-end"><button id="eg-cancel" style="padding:8px 18px;border-radius:6px;border:1.5px solid #ddd;background:none;font-family:var(--fb);font-size:.82rem;cursor:pointer">Cancel</button><button id="eg-save" style="padding:8px 18px;border-radius:6px;border:none;background:var(--t);color:#fff;font-family:var(--fb);font-size:.82rem;font-weight:600;cursor:pointer">Save</button></div>';
+    +'<div style="display:flex;gap:8px;justify-content:space-between;align-items:center"><button id="eg-delete" style="padding:8px 18px;border-radius:6px;border:1.5px solid #e55;background:none;color:#c33;font-family:var(--fb);font-size:.82rem;cursor:pointer">Delete Goal</button><div style="display:flex;gap:8px"><button id="eg-cancel" style="padding:8px 18px;border-radius:6px;border:1.5px solid #ddd;background:none;font-family:var(--fb);font-size:.82rem;cursor:pointer">Cancel</button><button id="eg-save" style="padding:8px 18px;border-radius:6px;border:none;background:var(--t);color:#fff;font-family:var(--fb);font-size:.82rem;font-weight:600;cursor:pointer">Save</button></div></div>';
   overlay.appendChild(box); document.body.appendChild(overlay);
   document.getElementById('eg-cancel').onclick = function(){ overlay.remove(); };
   overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+  document.getElementById('eg-delete').onclick = function(){
+    var confirmMsg = 'Delete "'+g.t+'" and all its deliverables and tasks? This cannot be undone.';
+    if(!confirm(confirmMsg)) return;
+    pushUndo('Delete goal');
+    var idx = MD.findIndex(function(x){ return x.n===goalN; });
+    if(idx >= 0) MD.splice(idx, 1);
+    // Remove scorecard entry
+    var scIdx = SC.findIndex(function(s){ return s.gn===goalN; });
+    if(scIdx >= 0) SC.splice(scIdx, 1);
+    // Renumber remaining goals
+    var renumberMap = {};
+    MD.forEach(function(g,i){ renumberMap[g.n] = i+1; });
+    SC.forEach(function(sc){ if(renumberMap[sc.gn] !== undefined) sc.gn = renumberMap[sc.gn]; });
+    MD.forEach(function(g,i){ g.n = i+1; });
+    overlay.remove();
+    renderAll(); savePlan();
+    showToast('Goal deleted', false, true);
+  };
   document.getElementById('eg-save').onclick = function(){
     var title = document.getElementById('eg-title').value.trim();
     if(!title){ document.getElementById('eg-title').style.borderColor='#e55'; return; }
