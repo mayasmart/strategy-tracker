@@ -1237,9 +1237,8 @@ function renderWeeklyReview(){
         var rollBtn = (isPastWeek && ws !== 'cp') ? '<button class="roll-btn" onclick="rollTaskForward(\''+t.id+'\')" title="Copy to next week">&#8594;</button>' : '';
         return '<div class="wtr">'
           +'<div class="wck'+ck+'" onclick="toggleTask(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">'+chk+'</div>'
-          +'<div class="wtt">'+t.t+'</div>'
+          +'<div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px">'+'<span class="wtt">'+t.t+'</span>'+'<button class="star-btn'+(isStarred(t.id)?' starred':'')+'" onclick="toggleStar(\''+t.id+'\')" title="'+(isStarred(t.id)?'Unstar':'Star')+' task">&#9733;</button>'+'</div>'
           +rollBtn
-          +'<button class="star-btn'+(isStarred(t.id)?' starred':'')+'\" onclick=\"toggleStar(\\\''+t.id+'\\\')\" title=\"'+(isStarred(t.id)?'Unstar':'Star')+' task\">&#9733;</button>'
           +'<select class="sel '+ws+'" onchange="cSel(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">'+'<option'+(ws==='ns'?' selected':'')+'>Not Started</option>'+'<option'+(ws==='ip'?' selected':'')+'>In Progress</option>'+'<option'+(ws==='cp'?' selected':'')+'>Complete</option>'+'<option'+(ws==='oh'?' selected':'')+'>On Hold</option>'+'</select></div>';
       }).join('');
       return '<div class="wdg"><div class="wdh" style="border-left-color:'+d.c+'">'
