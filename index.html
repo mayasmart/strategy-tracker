@@ -78,8 +78,11 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
 .qb{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:4px;flex-shrink:0}
 .so{font-size:.82rem;color:#666;font-style:italic;margin-left:10px;flex:1}
 .db{border-bottom:1px solid #f0f0f0}.db:last-child{border-bottom:none}
-.dh{padding:8px 22px 8px 28px;display:flex;align-items:center;gap:8px;background:#fafafa;border-bottom:1px solid #f0f0f0;border-left:4px solid transparent}
+.dh{padding:8px 22px 8px 18px;display:flex;align-items:center;gap:8px;background:#fafafa;border-bottom:1px solid #f0f0f0;border-left:4px solid transparent}
 .dt2{font-size:.82rem;font-weight:600;color:var(--dt);flex:1}
+.dh-drag{cursor:grab;color:#ccc;font-size:.9rem;padding:0 2px;user-select:none;transition:color .15s;flex-shrink:0}
+.dh-drag:hover{color:#888}
+.db.deliv-dragging{opacity:.35}.db.deliv-drag-over{box-shadow:inset 0 -3px 0 0 var(--t)}
 .tl-p{padding:2px 0 4px}.tr-p{display:flex;align-items:center;gap:8px;padding:5px 22px 5px 46px;border-bottom:1px solid #f7f7f7}
 .tr-p:last-of-type{border-bottom:none}.tt-p{flex:1;font-size:.8rem;color:var(--ch);line-height:1.4}
 .add-r{padding:4px 22px 8px 46px}
@@ -370,7 +373,7 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
         <th style="width:15%">2026 Goal</th>
         <th style="width:19%" id="th-q">Q1 Strategy</th>
         <th style="width:24%" id="th-d">Deliverables</th>
-        <th id="th-t">This Week's Tasks</th>
+        <th id="th-t">This Month's Tasks</th>
       </tr></thead>
       <tbody id="map-tbody"></tbody>
     </table>
@@ -618,8 +621,9 @@ var _now = new Date();
 var CURRENT_MONTH_NAME = ['January','February','March','April','May','June','July','August','September','October','November','December'][_now.getMonth()];
 var CURRENT_QUARTER = 'Q'+Math.ceil((_now.getMonth()+1)/3);
 var viewingWeek = CURRENT_WEEK_ISO;
-var planFilterMonth = CURRENT_MONTH_NAME; // default to current month
+var planFilterMonth = 'all'; // default to all
 var planFilterGoal = 'all';  // 'all' or goal number as string e.g. '1'
+var planFilterQuarter = CURRENT_QUARTER; // 'all', 'Q1', 'Q2', 'Q3', 'Q4'
 var weekData = {}; // { 'YYYY-Wxx': { taskId: {status, count, notes} } }
 weekData[CURRENT_WEEK_ISO] = {}; // ensure current week always has an entry
 
@@ -1246,10 +1250,18 @@ function renderPlanFilterBar(){
   var bar = document.getElementById('plan-filter-bar');
   if(!bar) return;
 
-  // Month chips
+  // Quarter chips
+  var qChips = '<span class="pf-label">Quarter</span>';
+  qChips += '<button class="pf-chip'+(planFilterQuarter==='all'?' active':'')+'" onclick="setPlanFilter(\'quarter\',\'all\')">All</button>';
+  ['Q1','Q2','Q3','Q4'].forEach(function(q){
+    qChips += '<button class="pf-chip'+(planFilterQuarter===q?' active':'')+'" onclick="setPlanFilter(\'quarter\',\''+q+'\')">'+q+'</button>';
+  });
+
+  // Month chips — scoped to selected quarter
+  var visibleMonths = planFilterQuarter === 'all' ? MONTH_NAMES : QUARTER_MONTHS[planFilterQuarter];
   var monthChips = '<span class="pf-label">Month</span>';
   monthChips += '<button class="pf-chip'+(planFilterMonth==='all'?' active':'')+'" onclick="setPlanFilter(\'month\',\'all\')">All</button>';
-  MONTH_NAMES.forEach(function(m){
+  visibleMonths.forEach(function(m){
     monthChips += '<button class="pf-chip'+(planFilterMonth===m?' active':'')+'" onclick="setPlanFilter(\'month\',\''+m+'\')">'+m.slice(0,3)+'</button>';
   });
 
@@ -1260,10 +1272,18 @@ function renderPlanFilterBar(){
     goalChips += '<button class="pf-chip'+(planFilterGoal===String(g.n)?' active':'')+'" onclick="setPlanFilter(\'goal\',\''+g.n+'\')">Goal '+g.n+'</button>';
   });
 
-  bar.innerHTML = monthChips + '<div class="pf-div"></div>' + goalChips;
+  bar.innerHTML = qChips + '<div class="pf-div"></div>' + monthChips + '<div class="pf-div"></div>' + goalChips;
 }
 
 function setPlanFilter(type, value){
+  if(type === 'quarter'){
+    planFilterQuarter = value;
+    planFilterMonth = 'all'; // reset month when quarter changes
+    // Sync strategy tabs to show selected quarter
+    if(value !== 'all'){
+      MD.forEach(function(g){ goalQuarterView[g.n] = value; });
+    }
+  }
   if(type === 'month') planFilterMonth = value;
   if(type === 'goal')  planFilterGoal  = value;
   renderToday();
@@ -1274,7 +1294,13 @@ function setPlanFilter(type, value){
 function renderPlan(){
   var container = document.getElementById('plan-goals-container');
 
-  // Compute which ISO weeks belong to the filtered month (if any)
+  // Compute which months are visible based on quarter + month filter
+  var filterMonths = null; // null means show all
+  if(planFilterMonth !== 'all'){
+    filterMonths = [planFilterMonth];
+  } else if(planFilterQuarter !== 'all'){
+    filterMonths = QUARTER_MONTHS[planFilterQuarter];
+  }
   var filterWeeks = planFilterMonth === 'all' ? null : weeksInMonth(planFilterMonth);
 
   // Group goals by year, applying goal filter
@@ -1324,13 +1350,13 @@ function renderPlan(){
         }).join('');
         tasksHtml += '<div class="add-r"><button class="btn btn-g btn-sm" onclick="openAddTask('+g.n+',\''+d.t.replace(/'/g,"\\'")+'\')">+ Task</button></div>';
       }
-      // When month-filtering, hide non-standing deliverables not in the selected month
-      // Also hide if month is unset (it hasn't been assigned yet)
-      if(filterWeeks && !isStanding && d.month !== planFilterMonth) return '';
-      return '<div class="db"><div class="dh" style="border-left-color:'+d.c+'">'
+      // When filtering, hide non-standing deliverables not in the visible months
+      if(filterMonths && !isStanding && filterMonths.indexOf(d.month) < 0) return '';
+      return '<div class="db" draggable="true" data-deliv-goal="'+g.n+'" data-deliv-title="'+d.t.replace(/"/g,'&quot;')+'"><div class="dh" style="border-left-color:'+d.c+'">'
+        +'<span class="dh-drag" title="Drag to reorder">&#9776;</span>'
         +'<div class="dot-lg" style="background:'+d.c+'"></div>'
         +'<div class="dt2">'+d.t+'</div>'
-        +(isStanding ? '<span style="font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--td);background:var(--mn);padding:2px 7px;border-radius:3px">Standing</span>' : '')
+        +(isStanding ? '<span style="font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--td);background:var(--mn);padding:2px 7px;border-radius:3px">Standing</span>' : (d.month ? '<span style="font-size:.65rem;font-weight:600;color:#999;background:#f0f0f0;padding:2px 7px;border-radius:3px">'+d.month.slice(0,3)+'</span>' : ''))
         +(isStanding
           ? '<button class="btn-ic" onclick="openEditStandingDeliverable('+g.n+',\''+d.t.replace(/'/g,"\\'")+'\');" style="margin-left:auto">✎</button>'
           : '<button class="btn-ic dh-edit" data-gn="'+g.n+'" data-dt="'+d.t.replace(/"/g,'&quot;')+'" style="margin-left:auto">✎</button>')
@@ -1388,6 +1414,13 @@ function setQuarterStrategy(g, q, text){
 
 // Track which quarter is selected per goal in the Plan view
 var goalQuarterView = {}; // { goalN: 'Q1' | 'Q2' | ... }
+
+// Month-to-quarter mapping
+var QUARTER_MONTHS = {Q1:['January','February','March'], Q2:['April','May','June'], Q3:['July','August','September'], Q4:['October','November','December']};
+function monthToQuarter(monthName){
+  for(var q in QUARTER_MONTHS){ if(QUARTER_MONTHS[q].indexOf(monthName)>=0) return q; }
+  return 'Q1';
+}
 var MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
 function weeksInMonth(monthName){
   var monthIdx=MONTH_NAMES.indexOf(monthName);
@@ -1743,7 +1776,7 @@ function selM(btn, month, q){
   btn.classList.add('active','hd');
   document.getElementById('th-q').textContent=q+' Strategy';
   document.getElementById('th-d').textContent=month+' Deliverables';
-  document.getElementById('th-t').textContent=(month===CURRENT_MONTH_NAME)?"This Week's Tasks":month+' Tasks';
+  document.getElementById('th-t').textContent=month+' Tasks';
   renderMap(month,q);
 }
 
@@ -2112,6 +2145,65 @@ document.addEventListener('dragend',function(e){
   document.querySelectorAll('.gc.dragging').forEach(function(el){el.classList.remove('dragging');});
   document.querySelectorAll('.gc.drag-over-goal').forEach(function(el){el.classList.remove('drag-over-goal');});
   dragGoalEl=null; dragGoalN=null;
+});
+
+// ═══════════════════════════════════════════════════════════
+// DELIVERABLE REORDERING (drag-and-drop in Plan view)
+// ═══════════════════════════════════════════════════════════
+var dragDelivEl=null, dragDelivGoalN=null, dragDelivTitle=null;
+document.addEventListener('dragstart',function(e){
+  var handle=e.target.closest('.dh-drag');
+  if(!handle) return;
+  var db=handle.closest('.db[data-deliv-goal]');
+  if(!db) return;
+  e.stopPropagation();
+  dragDelivEl=db;
+  dragDelivGoalN=parseInt(db.dataset.delivGoal);
+  dragDelivTitle=db.dataset.delivTitle;
+  db.classList.add('deliv-dragging');
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/deliv',dragDelivTitle);
+});
+document.addEventListener('dragover',function(e){
+  if(!dragDelivEl) return;
+  var db=e.target.closest('.db[data-deliv-goal]');
+  if(!db||db===dragDelivEl) return;
+  // Only allow reorder within same goal
+  if(parseInt(db.dataset.delivGoal)!==dragDelivGoalN) return;
+  e.preventDefault(); e.dataTransfer.dropEffect='move';
+  document.querySelectorAll('.db.deliv-drag-over').forEach(function(el){el.classList.remove('deliv-drag-over');});
+  db.classList.add('deliv-drag-over');
+});
+document.addEventListener('dragleave',function(e){
+  if(!dragDelivEl) return;
+  var db=e.target.closest('.db[data-deliv-goal]');
+  if(db) db.classList.remove('deliv-drag-over');
+});
+document.addEventListener('drop',function(e){
+  if(!dragDelivEl) return;
+  e.preventDefault();
+  document.querySelectorAll('.db.deliv-drag-over').forEach(function(el){el.classList.remove('deliv-drag-over');});
+  document.querySelectorAll('.db.deliv-dragging').forEach(function(el){el.classList.remove('deliv-dragging');});
+  var targetDb=e.target.closest('.db[data-deliv-goal]');
+  if(!targetDb||targetDb===dragDelivEl) return;
+  if(parseInt(targetDb.dataset.delivGoal)!==dragDelivGoalN) return;
+  var targetTitle=targetDb.dataset.delivTitle;
+  var g=MD.find(function(g){return g.n===dragDelivGoalN;});
+  if(!g) return;
+  var srcIdx=g.delivs.findIndex(function(d){return d.t===dragDelivTitle;});
+  var tgtIdx=g.delivs.findIndex(function(d){return d.t===targetTitle;});
+  if(srcIdx<0||tgtIdx<0) return;
+  pushUndo('Reorder deliverables');
+  var deliv=g.delivs.splice(srcIdx,1)[0];
+  g.delivs.splice(tgtIdx,0,deliv);
+  dragDelivEl=null; dragDelivGoalN=null; dragDelivTitle=null;
+  renderAll(); savePlan();
+  showToast('Deliverable reordered', false, true);
+});
+document.addEventListener('dragend',function(e){
+  document.querySelectorAll('.db.deliv-dragging').forEach(function(el){el.classList.remove('deliv-dragging');});
+  document.querySelectorAll('.db.deliv-drag-over').forEach(function(el){el.classList.remove('deliv-drag-over');});
+  dragDelivEl=null; dragDelivGoalN=null; dragDelivTitle=null;
 });
 
 // Edit Deliverable modal
@@ -2597,7 +2689,9 @@ function printWeeklyReview(){
 
   var goalsHtml = MD.map(function(g){
     var delivsHtml = g.delivs.map(function(d){
-      var tasksHtml = d.tasks.map(function(t){
+      var weekTasks = d.standing ? d.tasks : d.tasks.filter(function(t){ return (t.week||CURRENT_WEEK_ISO)===viewingWeek; });
+      if(weekTasks.length === 0) return '';
+      var tasksHtml = weekTasks.map(function(t){
         if(d.standing){
           var tt=t.type||'count';
           if(tt==='count'){
@@ -2622,6 +2716,7 @@ function printWeeklyReview(){
         +'</div>'
         +'<table style="width:100%;border-collapse:collapse">'+tasksHtml+'</table></div>';
     }).join('');
+    if(!delivsHtml.trim()) return '';
     return '<div style="margin-bottom:10px;border:1px solid #eee;border-radius:6px;overflow:hidden">'
       +'<div style="padding:7px 10px;background:'+g.c+';display:flex;align-items:center;gap:8px">'
       +'<span style="font-family:Georgia,serif;font-size:12px;color:#fff;font-weight:600">Goal '+g.n+' · '+g.t+'</span></div>'
