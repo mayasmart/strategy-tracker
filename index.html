@@ -30,10 +30,11 @@ nav button.active{color:var(--dt);background:var(--t);font-weight:600}
 .hdr-auth:hover{background:rgba(255,255,255,.08)}
 .hdr-dot{width:7px;height:7px;border-radius:50%;background:#4ade80}
 .hdr-dot.off{background:#888}
-.save-indicator{font-size:.68rem;color:rgba(255,255,255,.35);padding:3px 8px;border-radius:4px;transition:all .3s;white-space:nowrap}
-.save-indicator.saving{color:var(--go)}
-.save-indicator.saved{color:#4ade80}
-.save-indicator.error{color:#f87171}
+.save-indicator{font-size:.72rem;font-weight:600;color:rgba(255,255,255,.3);padding:4px 12px;border-radius:6px;transition:all .3s;white-space:nowrap}
+.save-indicator.saving{color:#fbbf24;background:rgba(251,191,36,.15);animation:pulse-save 1.2s ease-in-out infinite}
+.save-indicator.saved{color:#4ade80;background:rgba(74,222,128,.15)}
+.save-indicator.error{color:#f87171;background:rgba(248,113,113,.2);cursor:pointer}
+@keyframes pulse-save{0%,100%{opacity:1}50%{opacity:.5}}
 
 /* MAIN */
 main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
@@ -738,11 +739,25 @@ async function createDashboardTab(){
 
 var MD = [];
 
-var SC = [
-  {gn:1,color:'#27A8AF',gl:'#E6F6F7',type:'cumulative',label:'clients',target:10,months:{},notes:{}},
-  {gn:2,color:'#D9BC52',gl:'#FDF7E3',type:'threshold',label:'%',target:20,months:{},notes:{}},
-  {gn:3,color:'#39436e',gl:'#ECEEF5',type:'cumulative',label:'copies',target:20000,months:{},notes:{}}
-];
+var SC = []; // Built dynamically from MD after plan loads
+
+// Ensure SC has an entry for every goal in MD, remove orphans
+function syncSCwithMD(){
+  // Add missing SC entries for goals in MD
+  MD.forEach(function(g){
+    var sc = SC.find(function(s){ return s.gn === g.n; });
+    if(!sc){
+      SC.push({gn: g.n, color: g.c, gl: g.l, type: g.type||'cumulative', label: g.label||'', target: g.target||0, months: {}, notes: {}});
+    } else {
+      // Sync goal metadata into SC
+      sc.color = g.c; sc.gl = g.l; sc.type = g.type||sc.type; sc.label = g.label||sc.label; sc.target = g.target||sc.target;
+    }
+  });
+  // Remove SC entries for goals no longer in MD
+  SC = SC.filter(function(s){ return MD.some(function(g){ return g.n === s.gn; }); });
+  // Sort SC to match MD order
+  SC.sort(function(a,b){ return a.gn - b.gn; });
+}
 
 // Week state
 var CURRENT_WEEK_ISO = getISOWeek(new Date());
@@ -811,7 +826,7 @@ function getWeekNote(isoWeek){
 // SHEETS SYNC
 // ═══════════════════════════════════════════════════════════
 var saveTimer = null;
-var pendingChanges = {}; // {range: values}
+var pendingChanges = {}; // {range: {values, clearFirst?}}
 var isSaving = false;
 var undoStack = []; // stack of {snapshot, label} — up to 10 deep
 var undoTimer = null;
@@ -830,17 +845,17 @@ function applyUndo(){
   if(!entry) return;
   MD = entry.snapshot;
   renderAll();
-  savePlan();
+  savePlan(); saveScorecard();
   showToast('Undone: '+entry.label);
 }
 
 var retryDelay = 150; // grows on repeated failures
-function queueSave(range, values){
+function queueSave(range, values, clearFirst){
   if(!isSignedIn()) return;
   // Deduplicate by tab name — if we already have a pending save for this tab, replace it
   var tab = range.split('!')[0];
   Object.keys(pendingChanges).forEach(function(k){ if(k.split('!')[0] === tab) delete pendingChanges[k]; });
-  pendingChanges[range] = values;
+  pendingChanges[range] = {values: values, clearFirst: !!clearFirst};
   showSaveIndicator('pending');
   clearTimeout(saveTimer);
   saveTimer = setTimeout(flushSave, 150);
@@ -849,9 +864,9 @@ function queueSave(range, values){
 function showSaveIndicator(state){
   var el = document.getElementById('save-indicator');
   if(!el) return;
-  if(state === 'pending'){ el.textContent = 'Saving…'; el.className = 'save-indicator saving'; }
-  else if(state === 'saved'){ el.textContent = 'Saved ✓'; el.className = 'save-indicator saved'; setTimeout(function(){ el.textContent=''; el.className='save-indicator'; }, 2000); }
-  else if(state === 'error'){ el.textContent = 'Save failed'; el.className = 'save-indicator error'; }
+  if(state === 'pending'){ el.textContent = '● Saving…'; el.className = 'save-indicator saving'; }
+  else if(state === 'saved'){ el.textContent = '✓ Saved'; el.className = 'save-indicator saved'; setTimeout(function(){ el.textContent=''; el.className='save-indicator'; }, 3000); }
+  else if(state === 'error'){ el.textContent = '✗ Save failed — click to retry'; el.className = 'save-indicator error'; el.onclick = function(){ el.onclick=null; flushSave(); }; }
 }
 
 async function flushSave(){
@@ -867,8 +882,14 @@ async function flushSave(){
   var ranges = Object.keys(toSave);
   for(var i = 0; i < ranges.length; i++){
     var range = ranges[i];
+    var entry = toSave[range];
     try{
-      await sheetsUpdate(SHEET_ID, range, toSave[range]);
+      // Clear entire tab first if requested (prevents stale rows when data shrinks)
+      if(entry.clearFirst){
+        var tab = range.split('!')[0];
+        await sheetsClear(SHEET_ID, tab+'!A:Z');
+      }
+      await sheetsUpdate(SHEET_ID, range, entry.values);
     }catch(e){
       console.error('Save failed for '+range+':', e);
       failed[range] = toSave[range];
@@ -943,6 +964,8 @@ async function loadSalesData(){
 
 async function loadScorecardData(){
   if(!isSignedIn()) return;
+  // First, ensure SC matches MD
+  syncSCwithMD();
   try{
     var data = await sheetsGet(SHEET_ID, 'Scorecard!A:Z');
     var rows = data.values || [];
@@ -950,8 +973,9 @@ async function loadScorecardData(){
     rows.forEach(function(row, ri){
       if(ri === 0) return; // header
       var gn = parseInt(row[0]);
+      if(isNaN(gn)) return;
       var sc = SC.find(s => s.gn === gn);
-      if(!sc) return;
+      if(!sc) return; // skip rows for goals that no longer exist
       sc.months = {};
       sc.notes = {};
       months.forEach(function(m, mi){
@@ -994,6 +1018,20 @@ function saveTaskStatus(taskId, goalN, delivTitle, taskTitle, status, count, not
 }
 
 // Save scorecard value — rewrites entire scorecard sheet to keep it consistent
+function saveScorecard(){
+  if(!isSignedIn()) return;
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var header = ['Goal#'].concat(months).concat(months.map(m => m+' Notes'));
+  var rows = [header];
+  SC.forEach(function(s){
+    rows.push([s.gn]
+      .concat(months.map(function(m){ return s.months[m]!==undefined ? s.months[m] : ''; }))
+      .concat(months.map(function(m){ return s.notes[m]||''; }))
+    );
+  });
+  queueSave('Scorecard!A1:Y'+rows.length, rows, true);
+}
+
 function saveScorecardVal(goalN, month, value, notes){
   if(!isSignedIn()) return;
   var sc = SC.find(s => s.gn === goalN);
@@ -1005,17 +1043,7 @@ function saveScorecardVal(goalN, month, value, notes){
     delete sc.months[month];
   }
   if(notes !== undefined) sc.notes[month] = notes;
-  // Write full scorecard sheet: header + one row per goal
-  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  var header = ['Goal#'].concat(months).concat(months.map(m => m+' Notes'));
-  var rows = [header];
-  SC.forEach(function(s){
-    rows.push([s.gn]
-      .concat(months.map(function(m){ return s.months[m]!==undefined ? s.months[m] : ''; }))
-      .concat(months.map(function(m){ return s.notes[m]||''; }))
-    );
-  });
-  queueSave('Scorecard!A1:Y'+rows.length, rows);
+  saveScorecard();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1067,7 +1095,8 @@ function savePlan(){
   });
   // Write entire Plan sheet — clear then rewrite
   // Use fixed key 'Plan!A1' so rapid saves always replace each other in pendingChanges
-  queueSave('Plan!A1:V'+rows.length, rows);
+  // clearFirst=true ensures old rows beyond current data are removed
+  queueSave('Plan!A1:V'+rows.length, rows, true);
 }
 
 async function loadPlanData(){
@@ -1140,9 +1169,12 @@ async function loadPlanData(){
     MD.forEach(function(g){ if(seenN[g.n]) needsRepair = true; seenN[g.n] = true; });
     if(needsRepair){
       console.warn('Auto-repairing GoalN numbering on load...');
+      var repairMap = {};
+      MD.forEach(function(g,i){ repairMap[g.n] = i+1; });
+      SC.forEach(function(sc){ if(repairMap[sc.gn] !== undefined) sc.gn = repairMap[sc.gn]; });
       MD.forEach(function(g,i){ g.n = i+1; });
       // Save repaired data back to sheet
-      setTimeout(function(){ savePlan(); console.log('Repaired Plan saved'); }, 500);
+      setTimeout(function(){ savePlan(); saveScorecard(); console.log('Repaired Plan+Scorecard saved'); }, 500);
     }
   }catch(e){ console.warn('Could not load plan data', e); }
 }
@@ -2170,7 +2202,7 @@ function openEditGoal(goalN){
     SC.forEach(function(sc){ if(renumberMap[sc.gn] !== undefined) sc.gn = renumberMap[sc.gn]; });
     MD.forEach(function(g,i){ g.n = i+1; });
     overlay.remove();
-    renderAll(); savePlan();
+    renderAll(); savePlan(); saveScorecard();
     showToast('Goal deleted', false, true);
   };
   document.getElementById('eg-save').onclick = function(){
@@ -2181,10 +2213,10 @@ function openEditGoal(goalN){
     g.label = document.getElementById('eg-label').value.trim()||g.label;
     g.type = document.getElementById('eg-type').value;
     var sc = SC.find(s=>s.gn===goalN);
-    if(sc){ sc.target=g.target; sc.type=g.type; sc.label=g.label; }
+    if(sc){ sc.target=g.target; sc.type=g.type; sc.label=g.label; sc.color=g.c; sc.gl=g.l; }
     pushUndo('Edit goal');
     overlay.remove();
-    renderAll(); savePlan();
+    renderAll(); savePlan(); saveScorecard();
     showToast('Goal '+goalN+' updated', false, true);
   };
 }
@@ -2361,7 +2393,7 @@ document.addEventListener('drop',function(e){
     // Now renumber goals
     MD.forEach(function(g,i){ g.n = i+1; });
     dragType=null; dragInfo={};
-    renderAll(); savePlan();
+    renderAll(); savePlan(); saveScorecard();
     showToast('Goals reordered', false, true);
     return;
   }
@@ -2840,7 +2872,7 @@ function openAddGoal(){
     MD.push(newGoal);
     SC.push({gn: nextN, color: pal.c, gl: pal.l, type: type, label: label, target: target, months: {}, notes: {}});
     overlay.remove();
-    renderAll(); savePlan();
+    renderAll(); savePlan(); saveScorecard();
     showToast('Goal '+nextN+' added', false, true);
   };
 }
@@ -2875,7 +2907,7 @@ function editMeta(goalN){
     var sc=SC.find(s=>s.gn===goalN);
     if(sc){sc.target=g.target;sc.type=g.type;sc.label=g.label;}
     overlay.remove();
-    renderAll(); savePlan();
+    renderAll(); savePlan(); saveScorecard();
     showToast('Goal '+goalN+' metrics updated');
   };
   overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
@@ -3088,7 +3120,7 @@ async function init(){
       document.getElementById('app').style.display = '';
       updateAuthUI(true);
       showLoading('Loading your strategy...');
-      await Promise.all([loadPlanData(), loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
+      await loadPlanData(); await Promise.all([loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
       hideLoading();
       renderAll(); show('today');
       ensureDashboardTab(); // fire-and-forget
@@ -3107,7 +3139,7 @@ async function init(){
     updateAuthUI(true);
     showLoading('Loading your strategy...');
     try{
-      await Promise.all([loadPlanData(), loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
+      await loadPlanData(); await Promise.all([loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
     }catch(e){ console.warn('Sheets load failed, using defaults', e); }
     hideLoading();
     renderAll();
@@ -3125,7 +3157,7 @@ async function init(){
       updateAuthUI(true);
       showLoading('Loading your strategy...');
       try{
-        await Promise.all([loadPlanData(), loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
+        await loadPlanData(); await Promise.all([loadSalesData(), loadScorecardData(), loadWeeklyData(viewingWeek)]);
       }catch(e){ console.warn('Sheets load failed, using defaults', e); }
       hideLoading();
       renderAll(); show('today');
