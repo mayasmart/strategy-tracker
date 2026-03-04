@@ -772,14 +772,22 @@ var planFilterQuarter = CURRENT_QUARTER; // 'all', 'Q1', 'Q2', 'Q3', 'Q4'
 var weekData = {}; // { 'YYYY-Wxx': { taskId: {status, count, notes} } }
 
 // Starred tasks — persisted to localStorage, keyed by taskId
-var starredTasks = (function(){
-  try{ return JSON.parse(localStorage.getItem('starredTasks')||'{}'); }catch(e){ return {}; }
-})();
-function isStarred(taskId){ return !!starredTasks[taskId]; }
+function findTaskById(taskId){
+  var found = null;
+  MD.forEach(function(g){ g.delivs.forEach(function(d){ d.tasks.forEach(function(t){
+    if(t.id === taskId) found = t;
+  }); }); });
+  return found;
+}
+function isStarred(taskId){
+  var t = findTaskById(taskId);
+  return !!(t && t.starred);
+}
 function toggleStar(taskId){
-  if(starredTasks[taskId]) delete starredTasks[taskId];
-  else starredTasks[taskId] = true;
-  try{ localStorage.setItem('starredTasks', JSON.stringify(starredTasks)); }catch(e){}
+  var t = findTaskById(taskId);
+  if(!t) return;
+  t.starred = !t.starred;
+  savePlan();
   renderWeeklyReview();
   renderFocus();
 }
@@ -1090,33 +1098,33 @@ function savePlan(){
     MD.forEach(function(g,i){ g.n = i+1; });
     renderAll();
   }
-  var rows = [['GoalN','GoalYear','GoalTitle','GoalColor','GoalLight','GoalDark','GoalTarget','GoalType','GoalLabel','GoalStrategy','GoalQuarters','DelivTitle','DelivColor','DelivStanding','DelivMonth','TaskID','TaskTitle','TaskStatus','TaskCount','TaskTarget','TaskWeek','TaskType']];
+  var rows = [['GoalN','GoalYear','GoalTitle','GoalColor','GoalLight','GoalDark','GoalTarget','GoalType','GoalLabel','GoalStrategy','GoalQuarters','DelivTitle','DelivColor','DelivStanding','DelivMonth','TaskID','TaskTitle','TaskStatus','TaskCount','TaskTarget','TaskWeek','TaskType','TaskStarred']];
   MD.forEach(function(g){
     if(!g.delivs || g.delivs.length === 0){
       // Goal with no deliverables — still write one row
-      rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), '', '', '', '', '', '', '', '', '', '', '']);
+      rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), '', '', '', '', '', '', '', '', '', '', '', '']);
       return;
     }
     g.delivs.forEach(function(d){
       if(!d.tasks || d.tasks.length === 0){
-        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', d.month||'', '', '', '', '', '', '', '']);
+        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', d.month||'', '', '', '', '', '', '', '', '']);
         return;
       }
       d.tasks.forEach(function(t){
-        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', d.month||'', t.id, t.t, t.s||'ns', t.count!==null&&t.count!==undefined?t.count:'', t.target!==null&&t.target!==undefined?t.target:'', t.week||CURRENT_WEEK_ISO, t.type||(d.standing?'count':'')  ]);
+        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', d.month||'', t.id, t.t, t.s||'ns', t.count!==null&&t.count!==undefined?t.count:'', t.target!==null&&t.target!==undefined?t.target:'', t.week||CURRENT_WEEK_ISO, t.type||(d.standing?'count':''), t.starred?'1':''  ]);
       });
     });
   });
   // Write entire Plan sheet — clear then rewrite
   // Use fixed key 'Plan!A1' so rapid saves always replace each other in pendingChanges
   // clearFirst=true ensures old rows beyond current data are removed
-  queueSave('Plan!A1:V'+rows.length, rows, true);
+  queueSave('Plan!A1:W'+rows.length, rows, true);
 }
 
 async function loadPlanData(){
   if(!isSignedIn()) return;
   try{
-    var data = await sheetsGet(SHEET_ID, 'Plan!A:V');
+    var data = await sheetsGet(SHEET_ID, 'Plan!A:W');
     var rows = data.values || [];
     if(rows.length < 2) return; // no data yet
     var newMD = [];
@@ -1173,7 +1181,8 @@ async function loadPlanData(){
         count: tcount,
         target: ttarget,
         week: row[20]||CURRENT_WEEK_ISO,
-        type: ttype
+        type: ttype,
+        starred: row[22]==='1'
       });
     });
     if(newMD.length > 0) MD = newMD;
