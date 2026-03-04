@@ -1382,13 +1382,13 @@ function renderFocus(){
     var chk = isDone ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
 
     return '<div class="focus-row'+(isDone?' done':'')+'">'
-      +'<div class="wck'+ck+'" onclick="toggleTask(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\\',\''+t.id+'\');renderFocus()">'+chk+'</div>'
+      +'<div class="wck'+ck+'" onclick="toggleTask(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+ '\',\''+t.id+'\');renderFocus()">'+chk+'</div>'
       +'<div style="width:7px;height:7px;border-radius:50%;background:'+g.c+';flex-shrink:0"></div>'
       +'<div style="flex:1;min-width:0;display:flex;align-items:center;gap:7px">'
       +'<span class="wtt" style="'+(isDone?'text-decoration:line-through':'')+'">'+(t.t||'')+'</span>'
       +'<span class="focus-src">'+d.t+'</span>'
       +'</div>'
-      +'<select class="sel '+ws+'" style="flex-shrink:0" onchange="cSel(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\\',\''+t.id+'\');renderFocus()">'
+      +'<select class="sel '+ws+'" style="flex-shrink:0" onchange="cSel(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+ '\',\''+t.id+'\');renderFocus()">'
       +'<option'+(ws==='ns'?' selected':'')+'>Not Started</option>'
       +'<option'+(ws==='ip'?' selected':'')+'>In Progress</option>'
       +'<option'+(ws==='cp'?' selected':'')+'>Complete</option>'
