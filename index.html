@@ -2088,122 +2088,174 @@ function editQuarterStrategy(goalN, q){
 }
 
 // ═══════════════════════════════════════════════════════════
-// GOAL REORDERING (drag-and-drop in Plan view)
+// UNIFIED DRAG-AND-DROP (goals, deliverables, tasks)
 // ═══════════════════════════════════════════════════════════
-var dragGoalEl=null, dragGoalN=null;
+var dragType=null; // 'goal' | 'deliv' | 'task'
+var dragInfo={}; // context for the active drag
+
+// Track the mousedown target so dragstart knows what was clicked
+document.addEventListener('mousedown',function(e){ window._dragOrigin=e.target; });
+
 document.addEventListener('dragstart',function(e){
-  var handle=e.target.closest('.gc-drag');
-  if(!handle) return; // not a goal drag — let task handler deal with it
-  var gc=handle.closest('.gc[data-goal-n]');
-  if(!gc) return;
-  e.stopPropagation();
-  dragGoalEl=gc; dragGoalN=parseInt(gc.dataset.goalN);
-  gc.classList.add('dragging');
-  e.dataTransfer.effectAllowed='move';
-  e.dataTransfer.setData('text/goal',String(dragGoalN));
-});
-document.addEventListener('dragover',function(e){
-  if(!dragGoalEl) return;
-  var gc=e.target.closest('.gc[data-goal-n]');
-  if(!gc||gc===dragGoalEl) return;
-  e.preventDefault(); e.dataTransfer.dropEffect='move';
-  document.querySelectorAll('.gc.drag-over-goal').forEach(function(el){el.classList.remove('drag-over-goal');});
-  gc.classList.add('drag-over-goal');
-});
-document.addEventListener('dragleave',function(e){
-  if(!dragGoalEl) return;
-  var gc=e.target.closest('.gc[data-goal-n]');
-  if(gc) gc.classList.remove('drag-over-goal');
-});
-document.addEventListener('drop',function(e){
-  if(!dragGoalEl) return;
+  var origin=window._dragOrigin;
+  if(!origin) return;
+
+  // Goal drag (handle click)
+  if(origin.closest('.gc-drag')){
+    var gc=origin.closest('.gc[data-goal-n]');
+    if(!gc) return;
+    dragType='goal';
+    dragInfo={el:gc, goalN:parseInt(gc.dataset.goalN)};
+    gc.classList.add('dragging');
+    e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setData('text/plain','goal:'+gc.dataset.goalN);
+    return;
+  }
+
+  // Deliverable drag (handle click)
+  if(origin.closest('.dh-drag')){
+    var db=origin.closest('.db[data-deliv-goal]');
+    if(!db) return;
+    dragType='deliv';
+    dragInfo={el:db, goalN:parseInt(db.dataset.delivGoal), title:db.dataset.delivTitle};
+    db.classList.add('deliv-dragging');
+    e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setData('text/plain','deliv:'+db.dataset.delivTitle);
+    return;
+  }
+
+  // Task drag (handle click)
+  if(origin.closest('.drag-handle')){
+    var row=origin.closest('.tr-p[draggable]');
+    if(!row) return;
+    dragType='task';
+    dragInfo={el:row, taskId:row.dataset.taskId};
+    row.classList.add('dragging');
+    e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setData('text/plain','task:'+row.dataset.taskId);
+    return;
+  }
+
+  // Not a recognized drag handle — cancel
   e.preventDefault();
-  document.querySelectorAll('.gc.drag-over-goal').forEach(function(el){el.classList.remove('drag-over-goal');});
-  document.querySelectorAll('.gc.dragging').forEach(function(el){el.classList.remove('dragging');});
-  var targetGc=e.target.closest('.gc[data-goal-n]');
-  if(!targetGc||targetGc===dragGoalEl) return;
-  var targetN=parseInt(targetGc.dataset.goalN);
-  var srcIdx=MD.findIndex(function(g){return g.n===dragGoalN;});
-  var tgtIdx=MD.findIndex(function(g){return g.n===targetN;});
-  if(srcIdx<0||tgtIdx<0) return;
-  pushUndo('Reorder goals');
-  var goal=MD.splice(srcIdx,1)[0];
-  MD.splice(tgtIdx,0,goal);
-  // Renumber goals sequentially
-  MD.forEach(function(g,i){ 
-    var oldN = g.n;
-    g.n = i+1;
-    // Update scorecard references
-    var sc = SC.find(function(s){return s.gn===oldN;});
-    if(sc) sc.gn = g.n;
-  });
-  dragGoalEl=null; dragGoalN=null;
-  renderAll(); savePlan();
-  showToast('Goals reordered', false, true);
-});
-document.addEventListener('dragend',function(e){
-  document.querySelectorAll('.gc.dragging').forEach(function(el){el.classList.remove('dragging');});
-  document.querySelectorAll('.gc.drag-over-goal').forEach(function(el){el.classList.remove('drag-over-goal');});
-  dragGoalEl=null; dragGoalN=null;
 });
 
-// ═══════════════════════════════════════════════════════════
-// DELIVERABLE REORDERING (drag-and-drop in Plan view)
-// ═══════════════════════════════════════════════════════════
-var dragDelivEl=null, dragDelivGoalN=null, dragDelivTitle=null;
-document.addEventListener('dragstart',function(e){
-  var handle=e.target.closest('.dh-drag');
-  if(!handle) return;
-  var db=handle.closest('.db[data-deliv-goal]');
-  if(!db) return;
-  e.stopPropagation();
-  dragDelivEl=db;
-  dragDelivGoalN=parseInt(db.dataset.delivGoal);
-  dragDelivTitle=db.dataset.delivTitle;
-  db.classList.add('deliv-dragging');
-  e.dataTransfer.effectAllowed='move';
-  e.dataTransfer.setData('text/deliv',dragDelivTitle);
-});
 document.addEventListener('dragover',function(e){
-  if(!dragDelivEl) return;
-  var db=e.target.closest('.db[data-deliv-goal]');
-  if(!db||db===dragDelivEl) return;
-  // Only allow reorder within same goal
-  if(parseInt(db.dataset.delivGoal)!==dragDelivGoalN) return;
-  e.preventDefault(); e.dataTransfer.dropEffect='move';
-  document.querySelectorAll('.db.deliv-drag-over').forEach(function(el){el.classList.remove('deliv-drag-over');});
-  db.classList.add('deliv-drag-over');
+  if(!dragType) return;
+
+  if(dragType==='goal'){
+    var gc=e.target.closest('.gc[data-goal-n]');
+    if(!gc||gc===dragInfo.el) return;
+    e.preventDefault(); e.dataTransfer.dropEffect='move';
+    document.querySelectorAll('.gc.drag-over-goal').forEach(function(el){el.classList.remove('drag-over-goal');});
+    gc.classList.add('drag-over-goal');
+    return;
+  }
+
+  if(dragType==='deliv'){
+    var db=e.target.closest('.db[data-deliv-goal]');
+    if(!db||db===dragInfo.el) return;
+    if(parseInt(db.dataset.delivGoal)!==dragInfo.goalN) return;
+    e.preventDefault(); e.dataTransfer.dropEffect='move';
+    document.querySelectorAll('.db.deliv-drag-over').forEach(function(el){el.classList.remove('deliv-drag-over');});
+    db.classList.add('deliv-drag-over');
+    return;
+  }
+
+  if(dragType==='task'){
+    var row=e.target.closest('.tr-p[draggable]');
+    if(!row||row===dragInfo.el) return;
+    e.preventDefault(); e.dataTransfer.dropEffect='move';
+    document.querySelectorAll('.tr-p.drag-over').forEach(function(el){el.classList.remove('drag-over');});
+    row.classList.add('drag-over');
+    return;
+  }
 });
+
 document.addEventListener('dragleave',function(e){
-  if(!dragDelivEl) return;
-  var db=e.target.closest('.db[data-deliv-goal]');
-  if(db) db.classList.remove('deliv-drag-over');
+  if(!dragType) return;
+  if(dragType==='goal'){ var gc=e.target.closest('.gc[data-goal-n]'); if(gc) gc.classList.remove('drag-over-goal'); }
+  if(dragType==='deliv'){ var db=e.target.closest('.db[data-deliv-goal]'); if(db) db.classList.remove('deliv-drag-over'); }
+  if(dragType==='task'){ var row=e.target.closest('.tr-p[draggable]'); if(row) row.classList.remove('drag-over'); }
 });
+
 document.addEventListener('drop',function(e){
-  if(!dragDelivEl) return;
+  if(!dragType){ return; }
   e.preventDefault();
-  document.querySelectorAll('.db.deliv-drag-over').forEach(function(el){el.classList.remove('deliv-drag-over');});
-  document.querySelectorAll('.db.deliv-dragging').forEach(function(el){el.classList.remove('deliv-dragging');});
-  var targetDb=e.target.closest('.db[data-deliv-goal]');
-  if(!targetDb||targetDb===dragDelivEl) return;
-  if(parseInt(targetDb.dataset.delivGoal)!==dragDelivGoalN) return;
-  var targetTitle=targetDb.dataset.delivTitle;
-  var g=MD.find(function(g){return g.n===dragDelivGoalN;});
-  if(!g) return;
-  var srcIdx=g.delivs.findIndex(function(d){return d.t===dragDelivTitle;});
-  var tgtIdx=g.delivs.findIndex(function(d){return d.t===targetTitle;});
-  if(srcIdx<0||tgtIdx<0) return;
-  pushUndo('Reorder deliverables');
-  var deliv=g.delivs.splice(srcIdx,1)[0];
-  g.delivs.splice(tgtIdx,0,deliv);
-  dragDelivEl=null; dragDelivGoalN=null; dragDelivTitle=null;
-  renderAll(); savePlan();
-  showToast('Deliverable reordered', false, true);
+
+  if(dragType==='goal'){
+    document.querySelectorAll('.gc.drag-over-goal,.gc.dragging').forEach(function(el){el.classList.remove('drag-over-goal','dragging');});
+    var targetGc=e.target.closest('.gc[data-goal-n]');
+    if(!targetGc||targetGc===dragInfo.el){ dragType=null; dragInfo={}; return; }
+    var targetN=parseInt(targetGc.dataset.goalN);
+    var srcIdx=MD.findIndex(function(g){return g.n===dragInfo.goalN;});
+    var tgtIdx=MD.findIndex(function(g){return g.n===targetN;});
+    if(srcIdx<0||tgtIdx<0){ dragType=null; dragInfo={}; return; }
+    pushUndo('Reorder goals');
+    var goal=MD.splice(srcIdx,1)[0];
+    MD.splice(tgtIdx,0,goal);
+    MD.forEach(function(g,i){
+      var oldN=g.n; g.n=i+1;
+      var sc=SC.find(function(s){return s.gn===oldN;});
+      if(sc) sc.gn=g.n;
+    });
+    dragType=null; dragInfo={};
+    renderAll(); savePlan();
+    showToast('Goals reordered', false, true);
+    return;
+  }
+
+  if(dragType==='deliv'){
+    document.querySelectorAll('.db.deliv-drag-over,.db.deliv-dragging').forEach(function(el){el.classList.remove('deliv-drag-over','deliv-dragging');});
+    var targetDb=e.target.closest('.db[data-deliv-goal]');
+    if(!targetDb||targetDb===dragInfo.el){ dragType=null; dragInfo={}; return; }
+    if(parseInt(targetDb.dataset.delivGoal)!==dragInfo.goalN){ dragType=null; dragInfo={}; return; }
+    var g=MD.find(function(g){return g.n===dragInfo.goalN;});
+    if(!g){ dragType=null; dragInfo={}; return; }
+    var srcIdx=g.delivs.findIndex(function(d){return d.t===dragInfo.title;});
+    var tgtIdx=g.delivs.findIndex(function(d){return d.t===targetDb.dataset.delivTitle;});
+    if(srcIdx<0||tgtIdx<0){ dragType=null; dragInfo={}; return; }
+    pushUndo('Reorder deliverables');
+    var deliv=g.delivs.splice(srcIdx,1)[0];
+    g.delivs.splice(tgtIdx,0,deliv);
+    dragType=null; dragInfo={};
+    renderAll(); savePlan();
+    showToast('Deliverable reordered', false, true);
+    return;
+  }
+
+  if(dragType==='task'){
+    document.querySelectorAll('.tr-p.drag-over,.tr-p.dragging').forEach(function(el){el.classList.remove('drag-over','dragging');});
+    var targetRow=e.target.closest('.tr-p[draggable]');
+    if(!targetRow||targetRow===dragInfo.el){ dragType=null; dragInfo={}; return; }
+    var goalN=parseInt(targetRow.dataset.goal),delivTitle=targetRow.dataset.deliv;
+    var srcGoalN=parseInt(dragInfo.el.dataset.goal);
+    if(srcGoalN!==goalN||dragInfo.el.dataset.deliv!==delivTitle){ dragType=null; dragInfo={}; return; }
+    var g=MD.find(function(g){return g.n===goalN;});
+    if(!g){ dragType=null; dragInfo={}; return; }
+    var d=g.delivs.find(function(d){return d.t===delivTitle;});
+    if(!d){ dragType=null; dragInfo={}; return; }
+    var srcIdx=-1,tgtIdx=-1;
+    for(var i=0;i<d.tasks.length;i++){
+      if(d.tasks[i].id===dragInfo.taskId) srcIdx=i;
+      if(d.tasks[i].id===targetRow.dataset.taskId) tgtIdx=i;
+    }
+    if(srcIdx<0||tgtIdx<0){ dragType=null; dragInfo={}; return; }
+    pushUndo('Reorder tasks');
+    var task=d.tasks.splice(srcIdx,1)[0];
+    d.tasks.splice(tgtIdx,0,task);
+    dragType=null; dragInfo={};
+    renderAll(); savePlan();
+    showToast('Task reordered', false, true);
+    return;
+  }
 });
+
 document.addEventListener('dragend',function(e){
-  document.querySelectorAll('.db.deliv-dragging').forEach(function(el){el.classList.remove('deliv-dragging');});
-  document.querySelectorAll('.db.deliv-drag-over').forEach(function(el){el.classList.remove('deliv-drag-over');});
-  dragDelivEl=null; dragDelivGoalN=null; dragDelivTitle=null;
+  document.querySelectorAll('.gc.dragging,.gc.drag-over-goal').forEach(function(el){el.classList.remove('dragging','drag-over-goal');});
+  document.querySelectorAll('.db.deliv-dragging,.db.deliv-drag-over').forEach(function(el){el.classList.remove('deliv-dragging','deliv-drag-over');});
+  document.querySelectorAll('.tr-p.dragging,.tr-p.drag-over').forEach(function(el){el.classList.remove('dragging','drag-over');});
+  dragType=null; dragInfo={};
 });
 
 // Edit Deliverable modal
@@ -2968,55 +3020,6 @@ document.addEventListener('click', function(e){
 // ═══════════════════════════════════════════════════════════
 // DRAG-TO-REORDER TASKS IN PLAN VIEW
 // ═══════════════════════════════════════════════════════════
-var dragSrcEl=null,dragSrcTaskId=null;
-document.addEventListener('dragstart',function(e){
-  var row=e.target.closest('.tr-p[draggable]');
-  if(!row)return;
-  dragSrcEl=row;dragSrcTaskId=row.dataset.taskId;
-  row.classList.add('dragging');
-  e.dataTransfer.effectAllowed='move';
-  e.dataTransfer.setData('text/plain',dragSrcTaskId);
-});
-document.addEventListener('dragover',function(e){
-  var row=e.target.closest('.tr-p[draggable]');
-  if(!row||row===dragSrcEl)return;
-  e.preventDefault();e.dataTransfer.dropEffect='move';
-  document.querySelectorAll('.tr-p.drag-over').forEach(function(el){el.classList.remove('drag-over');});
-  row.classList.add('drag-over');
-});
-document.addEventListener('dragleave',function(e){
-  var row=e.target.closest('.tr-p[draggable]');
-  if(row)row.classList.remove('drag-over');
-});
-document.addEventListener('drop',function(e){
-  e.preventDefault();
-  document.querySelectorAll('.tr-p.drag-over').forEach(function(el){el.classList.remove('drag-over');});
-  document.querySelectorAll('.tr-p.dragging').forEach(function(el){el.classList.remove('dragging');});
-  var targetRow=e.target.closest('.tr-p[draggable]');
-  if(!targetRow||!dragSrcEl||targetRow===dragSrcEl)return;
-  var srcId=dragSrcTaskId,tgtId=targetRow.dataset.taskId;
-  var goalN=parseInt(targetRow.dataset.goal),delivTitle=targetRow.dataset.deliv;
-  if(parseInt(dragSrcEl.dataset.goal)!==goalN||dragSrcEl.dataset.deliv!==delivTitle)return;
-  var g=MD.find(function(g){return g.n===goalN;});
-  if(!g)return;
-  var d=g.delivs.find(function(d){return d.t===delivTitle;});
-  if(!d)return;
-  var srcIdx=-1,tgtIdx=-1;
-  for(var i=0;i<d.tasks.length;i++){
-    if(d.tasks[i].id===srcId)srcIdx=i;
-    if(d.tasks[i].id===tgtId)tgtIdx=i;
-  }
-  if(srcIdx<0||tgtIdx<0)return;
-  pushUndo('Reorder tasks');
-  var task=d.tasks.splice(srcIdx,1)[0];
-  d.tasks.splice(tgtIdx,0,task);
-  renderAll();savePlan();showToast('Task reordered');
-});
-document.addEventListener('dragend',function(e){
-  document.querySelectorAll('.tr-p.dragging').forEach(function(el){el.classList.remove('dragging');});
-  document.querySelectorAll('.tr-p.drag-over').forEach(function(el){el.classList.remove('drag-over');});
-  dragSrcEl=null;dragSrcTaskId=null;
-});
 
 </script>
 </body>
