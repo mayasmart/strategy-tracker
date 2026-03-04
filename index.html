@@ -1240,7 +1240,7 @@ function renderWeeklyReview(){
           +'<div class="wtt">'+t.t+'</div>'
           +rollBtn
           +'<button class="star-btn'+(isStarred(t.id)?' starred':'')+'\" onclick=\"toggleStar(\\\''+t.id+'\\\')\" title=\"'+(isStarred(t.id)?'Unstar':'Star')+' task\">&#9733;</button>'
-          +'<select class="sel '+ws+'"' onchange="cSel(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">'+'<option'+(ws==='ns'?' selected':'')+'>Not Started</option>'+'<option'+(ws==='ip'?' selected':'')+'>In Progress</option>'+'<option'+(ws==='cp'?' selected':'')+'>Complete</option>'+'<option'+(ws==='oh'?' selected':'')+'>On Hold</option>'+'</select></div>';
+          +'<select class="sel '+ws+'" onchange="cSel(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">'+'<option'+(ws==='ns'?' selected':'')+'>Not Started</option>'+'<option'+(ws==='ip'?' selected':'')+'>In Progress</option>'+'<option'+(ws==='cp'?' selected':'')+'>Complete</option>'+'<option'+(ws==='oh'?' selected':'')+'>On Hold</option>'+'</select></div>';
       }).join('');
       return '<div class="wdg"><div class="wdh" style="border-left-color:'+d.c+'">'
         +'<div class="dot-lg" style="background:'+d.c+'"></div><div class="wdt">'+d.t+'</div></div>'
