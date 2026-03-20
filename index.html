@@ -1495,7 +1495,7 @@ function renderMap(month,q){
     }
     var visDelivs=g.delivs.filter(function(d){
       if(d.standing) return true;
-      return d.tasks.some(function(t){ return monthWeeks.indexOf(t.week||CURRENT_WEEK_ISO)>=0; });
+      return d.month === month;
     });
     var dc=visDelivs.length
       ? visDelivs.map(function(d){return '<div class="map-di"><div class="dot-lg" style="background:'+d.c+';flex-shrink:0"></div><div class="map-dt2">'+d.t+(d.standing?' <span style="font-size:.6rem;font-weight:700;color:var(--td);background:var(--mn);padding:1px 5px;border-radius:3px">Standing</span>':'')+'</div></div>';}).join('')
