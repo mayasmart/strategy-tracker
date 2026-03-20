@@ -1317,9 +1317,12 @@ function renderPlanFilterBar(){
 function setPlanFilter(type, value){
   if(type === 'quarter'){
     planFilterQuarter = value;
-    planFilterMonth = 'all'; // reset month when quarter changes
+    planFilterMonth = 'all';
   }
-  if(type === 'month') planFilterMonth = value;
+  if(type === 'month'){
+    planFilterMonth = value;
+    if(value !== 'all') planFilterQuarter = monthToQuarter(value);
+  }
   if(type === 'goal')  planFilterGoal  = value;
   renderPlanFilterBar();
   renderPlan();
