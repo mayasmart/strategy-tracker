@@ -144,16 +144,6 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
 .str-row{padding:7px 20px;display:flex;align-items:center;gap:8px;background:#f4fafa;border-bottom:1px solid #e8f0f0;border-left:3px solid var(--t)}
 .str-qb{font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:3px;flex-shrink:0}
 .str-obj{font-size:.79rem;color:#555;font-style:italic}
-.q-tabs{display:flex;gap:0;flex-shrink:0}
-.q-tab{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border:1.5px solid #ddd;background:#fff;color:#aaa;cursor:pointer;transition:all .15s}
-.q-tab:first-child{border-radius:5px 0 0 5px}.q-tab:last-child{border-radius:0 5px 5px 0}
-.q-tab:not(:first-child){border-left:none}
-.q-tab.active{border-color:var(--t);background:var(--tl);color:var(--td)}
-.q-tab.has-text{color:#888}
-.q-tab.active.has-text{color:var(--td)}
-.q-strat{font-size:.82rem;color:#666;font-style:italic;flex:1;min-width:0;margin-left:10px;cursor:pointer;padding:4px 6px;border-radius:4px;transition:background .15s}
-.q-strat:hover{background:rgba(0,0,0,.04)}
-.q-strat.empty{color:#ccc;font-style:italic}
 .gc-drag{cursor:grab;color:#ccc;font-size:1.1rem;padding:0 4px;user-select:none;transition:color .15s}
 .gc-drag:hover{color:#888}
 .gc.dragging{opacity:.4}.gc.drag-over-goal{box-shadow:0 -3px 0 0 var(--t)}
@@ -256,17 +246,8 @@ main{flex:1;padding:28px 32px;max-width:1280px;margin:0 auto;width:100%}
 .drag-handle{cursor:grab;color:#ccc;font-size:.82rem;padding:0 4px;flex-shrink:0;user-select:none;touch-action:none}
 .drag-handle:hover{color:#999}
 
-/* ── STAR / FOCUS ── */
-.star-btn{background:none;border:none;cursor:pointer;padding:0 3px;font-size:.95rem;line-height:1;color:#ccc;transition:color .15s;flex-shrink:0}
-.star-btn:hover{color:var(--go)}
-.star-btn.starred{color:var(--go)}
-.focus-empty{padding:32px;text-align:center;color:#ccc;font-size:.88rem;font-style:italic}
-.focus-row{display:flex;align-items:center;gap:10px;padding:9px 22px;border-bottom:1px solid #f5f5f5;transition:background .1s}
-.focus-row:last-child{border-bottom:none}
-.focus-row:hover{background:#fafafa}
-.focus-row.done{opacity:.5}
-.focus-row .wtt{flex:none}
-.focus-src{font-size:.65rem;color:#aaa;background:#f5f5f5;padding:1px 7px;border-radius:3px;flex-shrink:0;white-space:nowrap}
+
+/* ── STAR / FOCUS ── (removed) */
 
 
 @media print{
@@ -753,24 +734,6 @@ var planFilterQuarter = 'all'; // 'all', 'Q1', 'Q2', 'Q3', 'Q4'
 var weekData = {}; // { 'YYYY-Wxx': { taskId: {status, count, notes} } }
 
 // Starred tasks — persisted to localStorage, keyed by taskId
-function findTaskById(taskId){
-  var found = null;
-  MD.forEach(function(g){ g.delivs.forEach(function(d){ d.tasks.forEach(function(t){
-    if(t.id === taskId) found = t;
-  }); }); });
-  return found;
-}
-function isStarred(taskId){
-  var t = findTaskById(taskId);
-  return !!(t && t.starred);
-}
-function toggleStar(taskId){
-  var t = findTaskById(taskId);
-  if(!t) return;
-  t.starred = !t.starred;
-  savePlan();
-  renderWeeklyReview();
-}
 weekData[CURRENT_WEEK_ISO] = {}; // ensure current week always has an entry
 
 // ═══════════════════════════════════════════════════════════
@@ -1091,7 +1054,7 @@ function savePlan(){
         return;
       }
       d.tasks.forEach(function(t){
-        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', d.month||'', t.id, t.t, t.s||'ns', t.count!==null&&t.count!==undefined?t.count:'', t.target!==null&&t.target!==undefined?t.target:'', t.week||CURRENT_WEEK_ISO, t.type||(d.standing?'count':''), t.starred?'1':''  ]);
+        rows.push([g.n, g.year||2026, g.t, g.c, g.l, g.d, g.target, g.type, g.label, g.s, JSON.stringify(g.quarters||{}), d.t, d.c, d.standing?'1':'', d.month||'', t.id, t.t, t.s||'ns', t.count!==null&&t.count!==undefined?t.count:'', t.target!==null&&t.target!==undefined?t.target:'', t.week||CURRENT_WEEK_ISO, t.type||(d.standing?'count':''), '' ]);
       });
     });
   });
@@ -1161,8 +1124,7 @@ async function loadPlanData(){
         count: tcount,
         target: ttarget,
         week: row[20]||CURRENT_WEEK_ISO,
-        type: ttype,
-        starred: row[22]==='1'
+        type: ttype
       });
     });
     if(newMD.length > 0) MD = newMD;
@@ -1226,7 +1188,7 @@ function renderWeeklyReview(){
         var rollBtn = (isPastWeek && ws !== 'cp') ? '<button class="roll-btn" onclick="rollTaskForward(\''+t.id+'\')" title="Copy to next week">&#8594;</button>' : '';
         return '<div class="wtr">'
           +'<div class="wck'+ck+'" onclick="toggleTask(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">'+chk+'</div>'
-          +'<div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px">'+'<span class="wtt">'+t.t+'</span>'+'<button class="star-btn'+(isStarred(t.id)?' starred':'')+'" onclick="toggleStar(\''+t.id+'\')" title="'+(isStarred(t.id)?'Unstar':'Star')+' task">&#9733;</button>'+'</div>'
+          +'<div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px">'+'<span class="wtt">'+t.t+'</span>'+'</div>'
           +rollBtn
           +'<select class="sel '+ws+'" onchange="cSel(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+'\',\''+t.id+'\')">'+'<option'+(ws==='ns'?' selected':'')+'>Not Started</option>'+'<option'+(ws==='ip'?' selected':'')+'>In Progress</option>'+'<option'+(ws==='cp'?' selected':'')+'>Complete</option>'+'<option'+(ws==='oh'?' selected':'')+'>On Hold</option>'+'</select></div>';
       }).join('');
@@ -1319,75 +1281,6 @@ function getFirstUncompletedTask(d){
   return null;
 }
 
-// ═══════════════════════════════════════════════════════════
-// RENDER — FOCUS
-// ═══════════════════════════════════════════════════════════
-function renderFocus(){
-  var list = document.getElementById('focus-list');
-  var countEl = document.getElementById('focus-count');
-  if(!list) return;
-
-  // Collect all starred tasks from MD (all deliverables, all weeks)
-  var items = [];
-  MD.forEach(function(g){
-    g.delivs.forEach(function(d){
-      d.tasks.forEach(function(t){
-        if(isStarred(t.id)) items.push({task:t, goal:g, deliv:d});
-      });
-      if(d.standing){
-        d.tasks.forEach(function(t){
-          if(isStarred(t.id)) items.push({task:t, goal:g, deliv:d});
-        });
-      }
-    });
-  });
-
-  // Dedupe (standing tasks appear in delivs already)
-  var seen = {};
-  items = items.filter(function(it){
-    if(seen[it.task.id]) return false;
-    seen[it.task.id] = true;
-    return true;
-  });
-
-  // Date in header
-  var dateSub = document.getElementById('focus-date-sub');
-  if(dateSub) dateSub.textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-  // Done count
-  var doneCount = items.filter(function(it){ return getWeekStatus(it.task.id) === 'cp'; }).length;
-  if(countEl) countEl.textContent = doneCount + ' / ' + items.length + ' Done';
-
-  if(items.length === 0){
-    list.innerHTML = '<div class="focus-empty">Star tasks in the Tasks tab to surface them here.</div>';
-    return;
-  }
-
-  var html = items.map(function(it){
-    var t = it.task, g = it.goal, d = it.deliv;
-    var ws = getWeekStatus(t.id);
-    var isDone = ws === 'cp';
-    var ck = isDone ? ' cp' : ws === 'ip' ? ' ip' : '';
-    var chk = isDone ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
-
-    return '<div class="focus-row'+(isDone?' done':'')+'">'
-      +'<div class="wck'+ck+'" onclick="toggleTask(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+ '\',\''+t.id+'\');renderFocus()">'+chk+'</div>'
-      +'<div style="width:7px;height:7px;border-radius:50%;background:'+g.c+';flex-shrink:0"></div>'
-      +'<div style="flex:1;min-width:0;display:flex;align-items:center;gap:7px">'
-      +'<span class="wtt" style="'+(isDone?'text-decoration:line-through':'')+'">'+(t.t||'')+'</span>'
-      +'<span class="focus-src">'+d.t+'</span>'
-      +'</div>'
-      +'<select class="sel '+ws+'" style="flex-shrink:0" onchange="cSel(this,\''+g.n+'\',\''+d.t.replace(/'/g,"\\'")+ '\',\''+t.id+'\');renderFocus()">'
-      +'<option'+(ws==='ns'?' selected':'')+'>Not Started</option>'
-      +'<option'+(ws==='ip'?' selected':'')+'>In Progress</option>'
-      +'<option'+(ws==='cp'?' selected':'')+'>Complete</option>'
-      +'<option'+(ws==='oh'?' selected':'')+'>On Hold</option>'
-      +'</select>'
-
-      +'</div>';
-  }).join('');
-
-  list.innerHTML = html;
-}
 
 // ═══════════════════════════════════════════════════════════
 // RENDER — PLAN
@@ -1425,10 +1318,6 @@ function setPlanFilter(type, value){
   if(type === 'quarter'){
     planFilterQuarter = value;
     planFilterMonth = 'all'; // reset month when quarter changes
-    // Sync strategy tabs to show selected quarter
-    if(value !== 'all'){
-      MD.forEach(function(g){ goalQuarterView[g.n] = value; });
-    }
   }
   if(type === 'month') planFilterMonth = value;
   if(type === 'goal')  planFilterGoal  = value;
@@ -1513,18 +1402,14 @@ function renderPlan(){
       +'</div></div></div>'
       +'<div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-g btn-sm" onclick="openEditGoal('+g.n+')">Edit</button></div></div>'
       +'<div class="sb"><div class="sh">'
-      +'<div class="q-tabs">'
-      +['Q1','Q2','Q3','Q4'].map(function(q){
-        var sel = (goalQuarterView[g.n]||CURRENT_QUARTER) === q;
-        var hasText = getQuarterStrategy(g, q) !== '';
-        return '<button class="q-tab'+(sel?' active':'')+(hasText?' has-text':'')+'" onclick="switchQuarter('+g.n+',\''+q+'\')">'+q+'</button>';
-      }).join('')
-      +'</div>'
       +(function(){
-        var activeQ = goalQuarterView[g.n]||CURRENT_QUARTER;
+        var activeQ = planFilterQuarter !== 'all' ? planFilterQuarter : CURRENT_QUARTER;
         var stratText = getQuarterStrategy(g, activeQ);
-        return '<div class="q-strat'+(stratText?'':' empty')+'" onclick="editQuarterStrategy('+g.n+',\''+ activeQ +'\')">'+(stratText || 'Click to add '+activeQ+' strategy…')+'</div>';
+        var qc = Q_COLORS[activeQ] || {bg:'var(--tl)',c:'var(--td)'};
+        return '<span class="qb" style="background:'+qc.bg+';color:'+qc.c+';flex-shrink:0">'+activeQ+'</span>'
+          +'<div class="so'+(stratText?'':'')+'" style="flex:1;'+(stratText?'':'color:#ccc;font-style:italic')+'">'+(stratText || 'No '+activeQ+' strategy set')+'</div>';
       })()
+      +'<button class="btn btn-g btn-sm" style="flex-shrink:0" onclick="editQuarterStrategy('+g.n+',\''+(planFilterQuarter!=='all'?planFilterQuarter:CURRENT_QUARTER)+'\')" title="Edit quarterly strategies">Edit Strategies</button>'
       +'<button class="btn btn-g btn-sm" style="flex-shrink:0" onclick="openAddDeliverable('+g.n+')">+ Deliverable</button>'
       +'<button class="btn btn-g btn-sm" style="flex-shrink:0" onclick="openAddStandingDeliverable('+g.n+')">+ Standing</button></div>'
       +delivsHtml+'</div></div>';
@@ -1550,9 +1435,6 @@ function setQuarterStrategy(g, q, text){
   g.quarters[q] = text;
   if(q === 'Q1') g.s = text;
 }
-
-// Track which quarter is selected per goal in the Plan view
-var goalQuarterView = {}; // { goalN: 'Q1' | 'Q2' | ... }
 
 // Month-to-quarter mapping
 var QUARTER_MONTHS = {Q1:['January','February','March'], Q2:['April','May','June'], Q3:['July','August','September'], Q4:['October','November','December']};
@@ -2192,13 +2074,6 @@ function openEditGoal(goalN){
     renderAll(); savePlan(); saveScorecard();
     showToast('Goal '+goalN+' updated', false, true);
   };
-}
-
-// Switch quarter tab in Plan view
-function switchQuarter(goalN, q){
-  goalQuarterView[goalN] = q;
-  renderPlanFilterBar();
-  renderPlan();
 }
 
 // Inline edit for quarter strategy
